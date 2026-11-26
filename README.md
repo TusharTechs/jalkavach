@@ -25,7 +25,7 @@ JalKavach joins them into one ward-level alert. Each alert carries:
 
 | Layer | What it does | Data provenance |
 |---|---|---|
-| Network twin | Builds the street graph from OpenStreetMap, then a pipe network along those streets, and runs EPANET 2.2 (via WNTR) with **pressure-dependent demand** and **intermittent supply windows**. | Streets: **real** (OSM). Elevation: **real** (Copernicus DEM via Open-Meteo). Pipes, sewers, ages: **synthetic**, seeded, constrained to the streets. |
+| Network twin | The demo ward is "Ward 00 · Demo Nagar", a neutral Indore locality (Scheme No. 78 area). It builds the street graph from OpenStreetMap, then a pipe network along those streets, and runs EPANET 2.2 (via WNTR) with **pressure-dependent demand** and **intermittent supply windows**. | Streets: **real** (OSM). Elevation: **real** (Copernicus DEM via Open-Meteo). Pipes, sewers, ages: **synthetic**, seeded, constrained to the streets. Landmarks carry **generic labels only** ("Park", "Medical store B"); no business names. |
 | Exposure prior | Scores each location by pipe age, sewer alongside, and *pressure-deficit hours*. The deficit is an exposure feature informed by Kumpel & Nelson's intermittent-supply field work, swept over 5/10/15 psi. | Derived |
 | Reachability | Runs one EPANET source-trace simulation per candidate ingress location, giving the share of each node's consumed water that passed through it. | Derived |
 | Bayesian engine | Computes a joint posterior over *(location × onset day × intensity)* plus an explicit **no-event** hypothesis. Complaints and pharmacy counts use negative-binomial likelihoods with delay and geocoding kernels. Field tests are kit-agnostic: chlorine (read instantly) or H2S (read the next day). Low chlorine at the network's tail ends is treated as normal and modelled, never assumed to mean contamination. | — |
@@ -41,20 +41,21 @@ The evaluation design was pre-registered before the first run: [`harness/PREREGI
 
 | Question (demo ward, ≤1 false alarm per ward per quarter) | Result |
 |---|---|
-| Alarm lead over a hospital-admissions-only baseline (median, paired) | **7.0 [6.0–8.0] days** |
-| Events detected within 21 days: fusion vs. hospital baseline | **94%** vs. 52% |
-| Events detected: fusion minus complaint-count exceedance (paired) | **+13 [8–18] points** |
-| Likely pipe in the top 3 three days after the alarm: fusion vs. complaint-centroid baseline | **67%** vs. 12% |
-| Fusion minus complaints-only, same metric (paired) | **+13 [8–19] points** |
-| Coverage of the 90% credible set | 95% [92–98] |
+| Alarm lead over a hospital-admissions-only baseline (median, paired; its misses counted at day 21) | **5.0 [4.0–6.0] days** |
+| Events detected within 21 days: fusion vs. hospital baseline | **85%** vs. 50% |
+| Events detected: fusion minus complaint-count exceedance (paired) | **+16 [11–21] points** |
+| True segment in the top 3 three days after the alarm: fusion vs. complaint-centroid baseline | **57%** vs. 13% |
+| Fusion minus complaints-only, same metric (paired) | **+14 [8–21] points** |
+| Coverage of the 90% credible set (conservative) | 97% [94–99] |
 | Robustness topology (EPANET Net3): lead over the hospital baseline | 5.0 [4.0–6.0] days |
 
 **What did not work as well, reported as measured:**
 - **Detection timing.** It is driven by complaints. Fusion alarms no earlier than complaints alone or a simple complaint-count exceedance detector. Fusion's gains come in **how many** events are caught and **where** the problem is located, not in how early the alarm fires.
-- **Intermittent-supply prior vs. a 24×7-style prior.** +2.7 points of top-3 accuracy, with a CI of −0.9 to +6.2. **Not significant.** Any informed prior beats a uniform one (+9.7 [4.4–15.0]) when ingress follows age, sewer and pressure risk. It costs −6.6 [−14.2–0.0] points when ingress is unrelated to those drivers.
-- **Information-gain field-test routing.** It needed slightly fewer tests on average than random sampling (7.8 vs. 9.2), but the CIs overlap.
-- **Equity.** Where the exposed population reports less, fusion detects 89% of events, vs. 96–98% elsewhere.
-- **Geocoding precision matters.** With 250 m geocoding error, top-3 localisation falls to 34%.
+- **Intermittent-supply prior vs. a 24×7-style prior.** +1.0 point of top-3 accuracy, with a CI of −3.4 to +5.4. **Not significant.** The informed prior beats a uniform one by only +3.4 [−2.5 to +9.3] points, and costs −6.7 [−14.3 to 0.0] points when ingress is unrelated to those risk drivers.
+- **Information-gain field-test routing.** It needed fewer tests than random sampling (median 6 vs. 10; mean 10.0 vs. 12.3), but the CIs overlap.
+- **Equity.** Where the exposed population reports less, fusion detects 74% of events, vs. 85–96% elsewhere.
+- **Geocoding precision matters.** With 250 m geocoding error, top-3 localisation falls to 29%.
+- **Small exposures.** Ingress that reaches only a few dozen residents is rarely detectable from complaints.
 
 Reproduce: `make eval` (about 3 minutes on 8 cores), then `make report`.
 
@@ -64,17 +65,41 @@ Reproduce: `make eval` (about 3 minutes on 8 cores), then `make report`.
 make setup   # uv sync --frozen (Python 3.12)
 make test    # offline, uses committed cache in data/cache
 make demo    # offline demo scenario (CLI)
-make dashboard   # Streamlit dashboard at http://localhost:8501 (offline)
+make app         # command centre at http://localhost:8036 (offline; serves the committed web/dist)
+make web         # rebuild the web front end (Node 22 + pnpm)
 ```
 
-The dashboard has five tabs:
-- **Ward map:** replay by day.
-- **Alert & escalation:** the city clock, owners and drafts.
-- **Intake:** voice notes and kit photos, which update the posterior live.
-- **Results.**
-- **Audit log:** includes a tamper test.
+### Command centre
 
-The replay scenario was chosen to be *typical*. Its detection delay and localisation match the harness medians (`src/jalkavach/demo.py`).
+`make app` serves a React + deck.gl command centre on top of the engine. It has:
+
+- **3D ward twin:**
+  - extruded OSM buildings
+  - pipes coloured by probability
+  - simulated water flow during supply hours only
+  - a low-pressure exposure layer when supply is off
+  - the predicted plume if the #1 segment is the source
+  - absolute probability columns
+- **Alert:** calibrated to ≤1 false alarm per ward per quarter. Playback pauses when it opens, the camera flies to the likely pipes, and a "search area" metric shows how much pipe is left to dig.
+- **Intake:**
+  - Hindi voice notes transcribed live on the laptop with faster-whisper (or recorded on the microphone)
+  - extraction and ambiguity-aware landmark geocoding
+  - the field-card photo reader
+- **City escalation clock:** owners, SLAs and the escalation chain set in `configs/escalation.yaml`; drafts need human approval; a printable export pack.
+- **Hash-chained audit trail:** with a live tamper test.
+- **Evidence and 2036 views.**
+
+All state is a pure function of (day, hour, recorded actions), so scrubbing the timeline is always consistent.
+
+**Presenter controls:**
+- Story mode (`P`): a hands-free, narrated walkthrough of about 75 seconds.
+- `←`/`→` change the day; `space` plays or pauses.
+- `1`–`6` switch views.
+- `S` stage mode (larger type), `H` Hindi, `R` reveal the simulated truth.
+
+Deep links: `/?view=command&day=7&hour=18`, `&stage`, `&lang=hi`, `&reset`.
+
+The legacy Streamlit dashboard is still available: `make dashboard`.
 
 ## Honest limitations
 
@@ -82,7 +107,7 @@ The replay scenario was chosen to be *typical*. Its detection delay and localisa
 - Every performance number comes from simulated scenarios, not field data. The harness uses model mismatch and a complaint process different from the one the engine assumes, to avoid grading the model on its own assumptions. The scenario parameters (complaint rates, pharmacy response) are assumptions, documented in `src/jalkavach/signals.py` and swept where it matters.
 - The second topology (EPANET Net3) is a standard benchmark used for robustness only. It is not an Indian network.
 - EPANET is a full-pipe solver. We do not simulate pipes draining and refilling.
-- "No alert" does not mean "safe".
+- "No alert" does not mean "safe". Ingress at dead-end lanes that reach only a few dozen residents produces too few complaints to detect; routine field tests are the only safeguard there.
 
 ## Prior work we build on
 

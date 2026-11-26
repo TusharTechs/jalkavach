@@ -121,20 +121,28 @@ class EscalationEngine:
                 "escalated_to": list(a.escalated_to)}
 
     def tick(self, a: Alert, now: datetime) -> list[str]:
-        """Notify the next designation in the chain for every N overdue hours."""
+        """Notify the next designation in the chain for every N overdue hours.
+
+        Each escalation is stamped at the moment it became due (SLA due time + k*N hours),
+        not at the moment the clock was checked, so the audit trail shows the true sequence.
+        """
         if a.status != "open":
             return []
-        over = (now - self.due(a)).total_seconds() / 3600
-        if over <= 0:
-            return []
+        due = self.due(a)
+        every = self.policy["escalate_every_hours"]
         chain = self.policy["escalation_chain"]
-        levels = min(len(chain), int(over // self.policy["escalate_every_hours"]) + 1)
-        new = [c for c in chain[:levels] if c not in a.escalated_to]
-        for who in new:
+        new = []
+        for k, who in enumerate(chain):
+            at = due + timedelta(hours=k * every)
+            if at > now:
+                break
+            if who in a.escalated_to:
+                continue
             a.escalated_to.append(who)
-            self.log.append(now, "JalKavach", "escalated", a.id, {
+            new.append(who)
+            self.log.append(at, "JalKavach", "escalated", a.id, {
                 "to": who, "stage": self.stages[a.stage_index]["id"],
-                "overdue_hours": round(over, 1), "owner": self.owner(a)})
+                "overdue_hours": round((at - due).total_seconds() / 3600, 1), "owner": self.owner(a)})
         return new
 
     def complete_stage(self, a: Alert, actor: str, now: datetime, note: str = "",
@@ -186,8 +194,12 @@ def draft_advisory(a: Alert, area_labels: list[str]) -> str:
     areas = ", ".join(area_labels[:3])
     return (
         f"[ड्राफ़्ट: स्वास्थ्य अधिकारी की स्वीकृति आवश्यक]\n"
+        f"[नगर निगम का नाम] · जल कार्य विभाग\n"
         f"{areas} क्षेत्र के निवासी कृपया अगली सूचना तक पीने का पानी कम से कम 1 मिनट उबालकर पिएँ। "
+        f"दस्त/उल्टी होने पर ORS लें व नज़दीकी स्वास्थ्य केंद्र जाएँ। वैकल्पिक जल आपूर्ति: टैंकर ___। "
         f"पानी में बदबू, रंग या दस्त-उल्टी की शिकायत 311 / 181 पर दर्ज करें।\n"
         f"[DRAFT: requires Health Officer approval]\n"
+        f"[Municipal corporation] · Water Works Department\n"
         f"Residents of {areas}: until further notice, boil drinking water for at least one minute. "
-        f"Report smell, discolouration, diarrhoea or vomiting on 311 / 181.")
+        f"If you have diarrhoea or vomiting, take ORS and visit the nearest health centre. "
+        f"Alternative supply: tanker ___. Report smell, discolouration, diarrhoea or vomiting on 311 / 181.")

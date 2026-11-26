@@ -35,14 +35,15 @@ async def no_cache_html(request, call_next):
 class TextIn(BaseModel):
     text: str
     day: int = 9
-    hour: int = 17
+    hour: int = 18
     add: bool = False
+    channel: str = "voice note"
 
 
 class TestIn(BaseModel):
     node: int
     day: int
-    hour: int = 17
+    hour: int = 18
     failed: bool
     value: float | None = None
 
@@ -50,7 +51,7 @@ class TestIn(BaseModel):
 class ActionIn(BaseModel):
     actor: str
     day: int
-    hour: int = 17
+    hour: int = 18
 
 
 @app.get("/api/meta")
@@ -64,7 +65,7 @@ def network():
 
 
 @app.get("/api/day/{day}")
-def day_state(day: int, hour: int = 17):
+def day_state(day: int, hour: int = 18):
     return svc.day_state(day, hour)
 
 
@@ -87,16 +88,23 @@ def clip_audio(cid: str):
 @app.post("/api/complaint")
 def complaint(body: TextIn):
     if body.add:
-        return svc.add_complaint(body.text, body.day, body.hour)
+        return svc.add_complaint(body.text, body.day, body.hour, body.channel)
     return {"parsed": svc.parse_complaint(body.text)}
 
 
 @app.post("/api/voice")
 async def voice(file: UploadFile = File(...)):
-    with tempfile.NamedTemporaryFile(suffix=".wav") as tmp:
+    """Microphone recording (any format ffmpeg reads) -> local Hindi ASR -> parsed complaint."""
+    suffix = Path(file.filename or "rec.webm").suffix or ".webm"
+    with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
         tmp.write(await file.read())
         tmp.flush()
-        return svc.transcribe_upload(tmp.name)
+        return svc.transcribe_live(tmp.name, convert=True)
+
+
+@app.post("/api/transcribe/{cid}")
+def transcribe_clip(cid: str):
+    return svc.transcribe_clip(Path(cid).name)
 
 
 @app.post("/api/kit")
@@ -121,13 +129,18 @@ def alert_action(action: str, body: ActionIn):
 
 
 @app.get("/api/audit")
-def audit():
-    return svc.audit()
+def audit(day: int, hour: int = 18):
+    return svc.audit(day, hour)
 
 
 @app.post("/api/audit/tamper-test")
-def tamper(seq: int = 1):
-    return svc.tamper_test(seq)
+def tamper(day: int, hour: int = 18, seq: int = 1):
+    return svc.tamper_test(day, hour, seq)
+
+
+@app.get("/api/export")
+def export(day: int, hour: int = 18):
+    return svc.export_pack(day, hour)
 
 
 @app.get("/api/results")

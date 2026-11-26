@@ -29,7 +29,7 @@ LEXICON = {
     "colour": {
         "yellow": ["पीला", "पीली", "peela", "pila", "yellow"],
         "muddy": ["मटमैला", "मैला", "गंदा", "गंदी", "gandा", "ganda", "gandi", "muddy", "dirty", "matmaila"],
-        "black": ["काला", "काली", "kala", "black"],
+        "black": ["काला पानी", "काले रंग", "black"],
         "white/foamy": ["झाग", "jhaag", "foam"],
     },
     "odour": {
@@ -56,6 +56,7 @@ class Complaint:
     match_score: float = 0.0
     node: int | None = None
     radius_m: float | None = None
+    candidates: int = 0
     water_quality: bool = False
 
     def as_dict(self) -> dict:
@@ -110,9 +111,9 @@ def _has(word: str, text_l: str) -> bool:
     w = _latin(word)
     if not w:
         return False
-    if f" {w}" in f" {text_l}":
+    if f" {w} " in f" {text_l} ":
         return True
-    return len(w) >= 4 and any(fuzz.ratio(w, tok) >= 80 for tok in text_l.split())
+    return len(w) >= 4 and any(len(tok) >= 4 and fuzz.ratio(w, tok) >= 80 for tok in text_l.split())
 
 
 def extract(text: str) -> Complaint:
@@ -152,7 +153,8 @@ class Gazetteer:
             node = int(np.argmin((lat - p["lat"]) ** 2 + (lon - p["lon"]) ** 2))
             alias_hi = " ".join(inv.get(w.lower(), "") for w in p["name"].split()).split()
             alias_hi = " ".join(alias_hi) if len(alias_hi) >= 2 else ""   # drop lone generic words
-            for nm in {p["name"], p.get("name_hi") or "", alias_hi} - {""}:
+            head_hi = (p.get("name_hi") or "").split()[-1] if p.get("name_hi") else ""
+            for nm in {p["name"], p.get("name_hi") or "", alias_hi, head_hi} - {""}:
                 self.entries.append({"name": p["name"], "key": _latin(nm), "node": node, "radius_m": 60.0,
                                      "kind": p.get("kind", "poi")})
 
@@ -175,12 +177,19 @@ class Gazetteer:
     def geocode(self, c: Complaint, min_score: float = 75.0) -> Complaint:
         qt = _latin(c.place_text or c.text).split()
         best, score = None, 0.0
+        scored = []
         for e in self.entries:
             s = self._score(e["key"], qt)
+            scored.append((s, e))
             if s > score:
                 best, score = e, s
+        # several different places match equally well (e.g. "school" when there are 7)
+        ties = {e["node"] for s, e in scored if s >= score - 1.0 and s >= min_score}
+        c.candidates = len(ties)
         if best and score >= min_score:
             c.place_match, c.match_score, c.node, c.radius_m = best["name"], float(score), best["node"], best["radius_m"]
+            if c.candidates > 1:
+                c.radius_m = 250.0          # ambiguous landmark: widen the geocoding uncertainty
         return c
 
 

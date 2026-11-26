@@ -45,15 +45,17 @@ def _run(ctx, ward, meta, seed, risk, thr):
     return sc, event, days, alarm
 
 
-def build(seed_range=range(200, 260)) -> dict:
+def build(seed_range=range(200, 400)) -> dict:
     ctx, ward, meta = build_context("demo_ward", offline=True)
     import pandas as pd
     risk = physical_risk(ward, pd.Series(meta["deficits"][10.0]))
     thr = _alert_threshold()
+    sp = ROOT / "results" / "summary_ward.json"
+    med = int(round(json.loads(sp.read_text())["detection"]["quarterly"]["F"]["median_delay"][0])) if sp.exists() else 1
     chosen = None
     for seed in seed_range:          # first scenario with typical outcomes (harness medians)
         sc, event, days, alarm = _run(ctx, ward, meta, seed, risk, thr)
-        if alarm is None or alarm - event["t0"] != 1:
+        if alarm is None or alarm - event["t0"] != med:
             continue
         post3 = dict(days)[min(alarm + 3, sc.days - 1)]
         if event["c"] in post3.top_k(3) and event["c"] not in dict(days)[alarm].top_k(1):
@@ -65,7 +67,7 @@ def build(seed_range=range(200, 260)) -> dict:
     out = {
         "label": ward.cfg["label"], "seed": seed, "alert_threshold": thr,
         "provenance": ward.provenance,
-        "note": ("Simulated scenario chosen to be typical: its detection delay (1 day) and its "
+        "note": (f"Simulated scenario chosen to be typical: its detection delay ({med} days) and its "
                  "localisation (true segment in top 3 three days after the alert) match the "
                  "harness medians. It is not a reconstruction of any real event."),
         "truth": {"node": event["c"], "onset_day": event["t0"]},

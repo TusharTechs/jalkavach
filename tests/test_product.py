@@ -29,14 +29,18 @@ def test_audit_chain_detects_tampering():
 
 
 def test_escalation_follows_city_chain_and_clock():
-    eng = EscalationEngine(AuditLog())
+    log = AuditLog()
+    eng = EscalationEngine(log)
+    every = eng.policy["escalate_every_hours"]
     a = _alert(eng)
     assert eng.tick(a, T0 + timedelta(hours=23)) == []                 # within 24 h SLA
     first = eng.tick(a, T0 + timedelta(hours=25))
     assert first == [eng.policy["escalation_chain"][0]]
-    later = eng.tick(a, T0 + timedelta(hours=24 + 25))                 # 25 h overdue -> 3 levels
+    eng.tick(a, T0 + timedelta(hours=24 + 2 * every + 1))              # two more steps due
     assert a.escalated_to == eng.policy["escalation_chain"][:3]
-    assert later == eng.policy["escalation_chain"][1:3]
+    # each escalation is stamped at the moment it became due, not when the clock was read
+    stamps = [r["ts"] for r in log.rows() if r["action"] == "escalated"]
+    assert stamps == sorted(stamps) and len(set(stamps)) == 3
 
 
 def test_confirm_creates_drafts_and_nothing_is_sent():
@@ -70,12 +74,17 @@ def test_demo_clips_geocode_to_their_landmarks(demo):
     gaz = Gazetteer.load(ward)
     clips = json.loads((ROOT / "data/demo/clips/clips.json").read_text())
     trans = json.loads((ROOT / "data/cache/transcripts.json").read_text())
-    expect = {"clip1": "Arogya", "clip2": "Chouhan", "clip3": "School", "clip4": "Devendra", "clip5": "Raghuvansh"}
+    expect = {"clip1": "Park", "clip2": "Water tank", "clip3": "Park", "clip4": "Water tank", "clip5": None}
     for c in clips:
         for text in [c["text"]] + [v["text"] for v in trans.values() if v["file"] == f"{c['id']}.wav"]:
             r = process_text(text, gaz)
-            assert r.place_match and expect[c["id"]] in r.place_match, (c["id"], text, r.place_match)
-    assert process_text("मंदिर के पास पानी गंदा है", gaz).node is None   # unknown landmark: no false geocode
+            if expect[c["id"]] is None:
+                assert not r.water_quality, (c["id"], text)               # "pressure is low" is rejected
+            else:
+                assert r.place_match == expect[c["id"]], (c["id"], text, r.place_match)
+    amb = process_text("स्कूल के पास पानी गंदा है", gaz)                  # 7 schools: flagged ambiguous
+    assert amb.candidates > 1 and amb.radius_m >= 250
+    assert process_text("रेलवे स्टेशन के पास पानी गंदा है", gaz).node is None   # unknown place: no geocode
 
 
 def test_kit_reader_screens_against_0_2_mg_l():
@@ -100,7 +109,8 @@ def test_kit_reader_rejects_photo_without_card():
 
 def test_demo_replay_is_typical_not_cherry_picked():
     r = json.loads((ROOT / "data/demo/replay.json").read_text())
-    assert r["alarm_day"] - r["truth"]["onset_day"] == 1                 # harness median delay
+    med = json.loads((ROOT / "results/summary_ward.json").read_text())["detection"]["quarterly"]["F"]["median_delay"][0]
+    assert r["alarm_day"] - r["truth"]["onset_day"] == round(med)         # harness median delay
     truth = r["truth"]["node"]
     day = next(d for d in r["days"] if d["day"] == r["alarm_day"] + 3)
     assert truth in day["top3"]

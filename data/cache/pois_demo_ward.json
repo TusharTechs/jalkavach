@@ -1,65 +1,240 @@
 [
 {
-"name": "Sarvottam Ayurvedic Clinic",
-"name_hi": "सर्वोत्तम आयुर्वेदिक क्लिनिक",
-"kind": "clinic",
-"lat": 22.7675366,
-"lon": 75.8477274
+"kind": "School",
+"name_hi": "स्कूल",
+"lat": 22.7110242,
+"lon": 75.8491892,
+"name": "School 1"
 },
 {
-"name": "Devendra Medical",
-"name_hi": "देवेंद्र मेडिकल",
-"kind": "pharmacy",
-"lat": 22.7663443,
-"lon": 75.8473996
+"kind": "Mandir",
+"name_hi": "मंदिर",
+"lat": 22.7110102,
+"lon": 75.8496607,
+"name": "Mandir 1"
 },
 {
-"name": "Arogya Medical Store",
-"name_hi": "आरोग्य मेडिकल स्टोर",
-"kind": "pharmacy",
-"lat": 22.7599016,
-"lon": 75.8478606
+"kind": "School",
+"name_hi": "स्कूल",
+"lat": 22.7100784,
+"lon": 75.8480864,
+"name": "School 2"
 },
 {
-"name": "Chouhan Clinic",
-"name_hi": "चौहान क्लिंनिक",
-"kind": "clinic",
-"lat": 22.7603213,
-"lon": 75.8477999
+"kind": "Mandir",
+"name_hi": "मंदिर",
+"lat": 22.7100867,
+"lon": 75.84981,
+"name": "Mandir 2"
 },
 {
-"name": "Raghuvansh Medicose",
-"name_hi": "रघुवंश मेडिकोज",
-"kind": "pharmacy",
-"lat": 22.7597494,
-"lon": 75.8478807
+"kind": "Mandir",
+"name_hi": "मंदिर",
+"lat": 22.7118938,
+"lon": 75.8498034,
+"name": "Mandir 3"
 },
 {
-"name": "Government Public School Bhagirathpura",
-"name_hi": "गवर्नमेंट पब्लिक स्कूल भागीरथपुरा",
-"kind": "school",
-"lat": 22.7636685,
-"lon": 75.8470211
+"kind": "Mandir",
+"name_hi": "मंदिर",
+"lat": 22.709088,
+"lon": 75.8477037,
+"name": "Mandir 4"
 },
 {
-"name": "Sulabh Complex",
-"name_hi": "सुलभ कोम्प्लेक्स",
-"kind": "toilets",
-"lat": 22.7631491,
-"lon": 75.84833
+"kind": "Clinic",
+"name_hi": "क्लिनिक",
+"lat": 22.7090723,
+"lon": 75.8462678,
+"name": "Clinic 1"
 },
 {
-"name": "Swacch Bharat Mission",
-"name_hi": "स्वच्छ भारत मिशन",
-"kind": "toilets",
-"lat": 22.764366,
-"lon": 75.8453903
+"kind": "Clinic",
+"name_hi": "क्लिनिक",
+"lat": 22.7096387,
+"lon": 75.8508244,
+"name": "Clinic 2"
 },
 {
-"name": "Sulabh Complex",
-"name_hi": "सुलभ कोम्प्लेक्स",
-"kind": "toilets",
-"lat": 22.7662419,
-"lon": 75.8479947
+"kind": "Medical store",
+"name_hi": "मेडिकल",
+"lat": 22.7084152,
+"lon": 75.8517659,
+"name": "Medical store A"
+},
+{
+"kind": "Medical store",
+"name_hi": "मेडिकल",
+"lat": 22.7084993,
+"lon": 75.8516123,
+"name": "Medical store B"
+},
+{
+"kind": "Clinic",
+"name_hi": "क्लिनिक",
+"lat": 22.7079339,
+"lon": 75.8505187,
+"name": "Clinic 3"
+},
+{
+"kind": "Clinic",
+"name_hi": "क्लिनिक",
+"lat": 22.7088964,
+"lon": 75.8467377,
+"name": "Clinic 4"
+},
+{
+"kind": "Clinic",
+"name_hi": "क्लिनिक",
+"lat": 22.7088558,
+"lon": 75.8467008,
+"name": "Clinic 5"
+},
+{
+"kind": "Medical store",
+"name_hi": "मेडिकल",
+"lat": 22.70958,
+"lon": 75.8507876,
+"name": "Medical store C"
+},
+{
+"kind": "Clinic",
+"name_hi": "क्लिनिक",
+"lat": 22.7084624,
+"lon": 75.8515208,
+"name": "Clinic 6"
+},
+{
+"kind": "Medical store",
+"name_hi": "मेडिकल",
+"lat": 22.7088749,
+"lon": 75.8465627,
+"name": "Medical store D"
+},
+{
+"kind": "Hospital",
+"name_hi": "अस्पताल",
+"lat": 22.7088283,
+"lon": 75.8464429,
+"name": "Hospital 1"
+},
+{
+"kind": "School",
+"name_hi": "स्कूल",
+"lat": 22.7061005,
+"lon": 75.854424,
+"name": "School 3"
+},
+{
+"kind": "Public toilet",
+"name_hi": "सुलभ शौचालय",
+"lat": 22.7106271,
+"lon": 75.8471538,
+"name": "Public toilet 1"
+},
+{
+"kind": "Public toilet",
+"name_hi": "सुलभ शौचालय",
+"lat": 22.7075615,
+"lon": 75.8467662,
+"name": "Public toilet 2"
+},
+{
+"kind": "Public toilet",
+"name_hi": "सुलभ शौचालय",
+"lat": 22.7083632,
+"lon": 75.8541477,
+"name": "Public toilet 3"
+},
+{
+"kind": "Public toilet",
+"name_hi": "सुलभ शौचालय",
+"lat": 22.7089088,
+"lon": 75.8511812,
+"name": "Public toilet 4"
+},
+{
+"kind": "Public toilet",
+"name_hi": "सुलभ शौचालय",
+"lat": 22.7082123,
+"lon": 75.8511624,
+"name": "Public toilet 5"
+},
+{
+"kind": "Public toilet",
+"name_hi": "सुलभ शौचालय",
+"lat": 22.7106556,
+"lon": 75.8472825,
+"name": "Public toilet 6"
+},
+{
+"kind": "Public toilet",
+"name_hi": "सुलभ शौचालय",
+"lat": 22.7115377,
+"lon": 75.8497093,
+"name": "Public toilet 7"
+},
+{
+"kind": "Public toilet",
+"name_hi": "सुलभ शौचालय",
+"lat": 22.7109339,
+"lon": 75.8530969,
+"name": "Public toilet 8"
+},
+{
+"kind": "School",
+"name_hi": "स्कूल",
+"lat": 22.7077712,
+"lon": 75.852599,
+"name": "School 4"
+},
+{
+"kind": "School",
+"name_hi": "स्कूल",
+"lat": 22.7104293,
+"lon": 75.8475488,
+"name": "School 5"
+},
+{
+"kind": "School",
+"name_hi": "स्कूल",
+"lat": 22.7074688,
+"lon": 75.8525089,
+"name": "School 6"
+},
+{
+"kind": "Hospital",
+"name_hi": "अस्पताल",
+"lat": 22.710007,
+"lon": 75.84975,
+"name": "Hospital 2"
+},
+{
+"kind": "Place of worship",
+"name_hi": "पूजा स्थल",
+"lat": 22.709871,
+"lon": 75.8536651,
+"name": "Place of worship"
+},
+{
+"kind": "School",
+"name_hi": "स्कूल",
+"lat": 22.710705844019625,
+"lon": 75.85197966539121,
+"name": "School 7"
+},
+{
+"kind": "Park",
+"name_hi": "पार्क",
+"lat": 22.706731760410918,
+"lon": 75.8540362245404,
+"name": "Park"
+},
+{
+"kind": "Water tank",
+"name_hi": "पानी की टंकी",
+"lat": 22.708419464299983,
+"lon": 75.85080090528174,
+"name": "Water tank"
 }
 ]

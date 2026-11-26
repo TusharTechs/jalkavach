@@ -169,8 +169,8 @@ def build_ward_network(cfg: dict, offline: bool = False) -> WardNetwork:
             load[sg[a][b]["pipe"]] += nodes.loc[target, "population"]
     share = load / nodes["population"].sum()
     pipes["diameter_mm"] = np.select(
-        [share > 0.5, share > 0.2, share > 0.06, share > 0.0],
-        [250, 200, 150, 100], default=100)
+        [share > 0.5, share > 0.2, share > 0.06, share > 0.02, share > 0.0],
+        [300, 250, 200, 150, 100], default=100)
 
     # ---- WNTR model
     wn = wntr.network.WaterNetworkModel()

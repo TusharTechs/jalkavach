@@ -1,6 +1,6 @@
 # Evaluation pre-registration
 
-Written **before** the first harness run (27 Nov 2026). If a metric or threshold changes after we see results, the change is logged at the bottom of this file with the reason.
+Written **before** the first harness run (26 Nov 2026). It was committed in the same commit as the first results, so git alone cannot prove the order. The design below was not changed by those results, except where logged at the bottom with the reason.
 
 ## Questions
 1. **Detection.** Does fusing complaints, field tests and pharmacy counts detect a sewage-ingress event earlier than a hospital-admissions-only baseline, at a fixed false-alarm budget?
@@ -66,8 +66,13 @@ Written **before** the first harness run (27 Nov 2026). If a metric or threshold
 - Ingress scenarios on Net3 are ours. It is **not** an India-realism benchmark.
 
 ## Change log
-- **27 Nov, after the development (quick) run, before the held-out run.**
+- **26 Nov, after the development (quick) run, before the held-out run.**
   - **Calibration.** On development seeds, coverage of the 90% credible set was 74–82%, so the engine was overconfident under misspecification.
   - **Change.** Added complaint-likelihood tempering (`complaint_temper = 0.4`), chosen on development seeds 500–579 to bring coverage to about 0.89. It did not change top-3 accuracy (0.55–0.57 across the temper values tried).
   - **Seeds.** The held-out run now uses fresh seeds (base 100,000), disjoint from the development seeds (1,000–31,000 and 500–579).
   - **Metrics.** No metric, threshold or scenario distribution was changed.
+- **26 Nov, ward relocation.**
+  - The demo ward was moved from its first location to a neutral residential area (Indore, Scheme No. 78 area), labelled "Ward 00 · Demo Nagar". The first location coincided with the site of a real 2025–26 outbreak, which was inappropriate for a public demonstration.
+  - The new ward is larger: 146 junctions vs. 84. Its trunk mains gained a 300 mm diameter tier so that pressures stay physical.
+  - The full pre-registered evaluation was re-run **unchanged** on the new ward with the same held-out seeds. All numbers reported now come from that run.
+  - The escalation policy now notifies every 24 h (previously 12 h). This does not affect any metric.

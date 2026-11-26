@@ -43,18 +43,19 @@ All results below are at **≤1 false alarm per ward per quarter**. Brackets are
 
 | | JalKavach | Baseline |
 |---|---|---|
-| Median alarm lead over hospital admissions | **7.0 [6.0–8.0] days** | — |
-| Events detected within 21 days | **94%** | 52% (hospital-only) |
-| Events detected, vs. simple complaint-count alarm | **+13 [8–18] points** | — |
-| True segment in top 3, 3 days after alert | **67%** | 12% (complaint centroid) |
-| 90% credible sets that contain the truth | 95% | — |
+| Median alarm lead over hospital admissions (its misses counted at day 21) | **5.0 [4.0–6.0] days** | — |
+| Events detected within 21 days | **85%** | 50% (hospital-only) |
+| Events detected, vs. simple complaint-count alarm | **+16 [11–21] points** | — |
+| True segment in top 3, 3 days after alert | **57%** | 13% (complaint centroid); 43% (complaints only) |
+| 90% credible sets that contain the truth (conservative) | 97% | — |
 | Robustness network (EPANET Net3): lead | 5.0 [4.0–6.0] days | — |
 
 **Limits we report ourselves:**
 
 - Fusion does not alarm *earlier* than complaints alone. Its gains are in *how many* events are caught and in *where* they are located.
-- The intermittent-supply prior does not beat a 24×7 prior significantly: +2.7 points, CI −0.9 to +6.2.
-- Detection is lower where people report less: 89% vs. 96–98%.
+- The intermittent-supply prior does not beat a 24×7 prior significantly: +1.0 point, CI −3.4 to +5.4.
+- Detection is lower where people report less: 74% vs. 85–96%.
+- Ingress reaching only a few dozen residents is rarely detectable from complaints.
 - All of these results are simulated. None is field data.
 
 ## 4. Cost and break-even

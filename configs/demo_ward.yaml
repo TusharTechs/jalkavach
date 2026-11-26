@@ -1,7 +1,7 @@
 # Demo ward configuration. Streets: OpenStreetMap (real). Pipes, sewers, ages: synthetic (seeded).
 name: demo_ward
-label: "Demo ward, Indore (real OSM streets; synthetic pipe network)"
-center: [22.7637, 75.8470]   # lat, lon
+label: "Ward 00 · Demo Nagar, Indore (real OSM streets; synthetic pipe network)"
+center: [22.7079, 75.8505]   # lat, lon. A neutral residential area, not linked to any outbreak
 dist_m: 450
 network_type: drive_service
 seed: 7

@@ -8,7 +8,7 @@ alert_threshold: auto          # "auto" = threshold calibrated to the false-alar
 false_alarm_budget: "≤1 false alarm per ward per quarter"
 
 notify_on_open:
-  - "District Surveillance Officer (IDSP)"     # informed, not the owner
+  - "District Surveillance Officer"     # informed, not the owner (no live IDSP link in this prototype)
 
 stages:
   - id: acknowledge
@@ -29,6 +29,6 @@ escalation_chain:               # who is notified, in order, when a stage is ove
   - "Superintending Engineer, Water Works"
   - "Additional Commissioner"
   - "Commissioner"
-escalate_every_hours: 12        # next level notified every N hours a stage stays overdue
+escalate_every_hours: 24        # next level notified every N hours a stage stays overdue
 
 advisory_approver: "Health Officer, Municipal Corporation"   # legal authority for advisories

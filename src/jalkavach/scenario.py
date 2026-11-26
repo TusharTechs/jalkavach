@@ -22,7 +22,7 @@ from .network import WardNetwork, node_mean_age, node_sewer_share
 from .signals import (FieldTest, Observations, SignalParams, WardContext, geocode_kernel,
                       geometric_pmf, poisson_pmf, ramp, test_fail_prob)
 
-DIAMETER_TIERS_M = [0.1, 0.15, 0.2, 0.25]
+DIAMETER_TIERS_M = [0.1, 0.15, 0.2, 0.25, 0.3]
 
 
 # ------------------------------------------------------------------- worlds

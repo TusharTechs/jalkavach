@@ -35,25 +35,21 @@ export default function MapView() {
   }, []);
 
   const center = net?.center ?? [75.847, 22.7637];
-  const [viewState, setViewState] = useState<MapViewState>({
-    longitude: center[0], latitude: center[1], zoom: 13.6, pitch: 0, bearing: 0,
-  });
+  const far = view === "intro" || view === "prologue";
+  const drawer = !far && view !== "command";
+  const target = (isFar: boolean, isDrawer: boolean): MapViewState => isFar
+    ? { longitude: center[0], latitude: center[1], zoom: 14.4, pitch: 20, bearing: 30 }
+    : { longitude: center[0] + (isDrawer ? 0.0042 : 0.0010), latitude: center[1] - 0.0012, zoom: 16.2, pitch: 54, bearing: -22 };
+  // start where the view should be (deep links), and animate only on later changes
+  const [viewState, setViewState] = useState<MapViewState>(() => target(far, drawer));
+  const first = useRef(true);
   useEffect(() => {
-    if (!net) return;
-    const delay = view === "intro" ? 0 : 60;
-    const id = window.setTimeout(() => {
-    if (view === "intro") {
-      setViewState({ longitude: net.center[0], latitude: net.center[1], zoom: 14.4, pitch: 20, bearing: 30 });
-    } else {
-      setViewState((v) => ({ ...v, longitude: net.center[0] + 0.0012, latitude: net.center[1] - 0.0012,
-        zoom: 16.45, pitch: 54, bearing: -22, transitionDuration: 3200, transitionInterpolator: new FlyToInterpolator({ speed: 1.1 }) }));
-    }
-    }, delay);
-    return () => window.clearTimeout(id);
-  }, [net, view === "intro"]);
+    if (first.current) { first.current = false; return; }
+    setViewState({ ...target(far, drawer), transitionDuration: far ? 0 : 2600, transitionInterpolator: new FlyToInterpolator({ speed: 1.2 }) });
+  }, [far, drawer]);
   useEffect(() => {
     if (!focus) return;
-    setViewState((v) => ({ ...v, longitude: focus.lon, latitude: focus.lat - 0.0009, zoom: 17, pitch: 58,
+    setViewState((v) => ({ ...v, longitude: focus.lon + (drawer ? 0.003 : 0), latitude: focus.lat - 0.0009, zoom: 16.9, pitch: 56,
       transitionDuration: 1800, transitionInterpolator: new FlyToInterpolator({ speed: 1.4 }) }));
   }, [focus?.at]);
 
@@ -95,7 +91,16 @@ export default function MapView() {
       updateTriggers: { getColor: [state?.day, state?.extras, alerting] },
     }));
 
-    if (layers.flow) {
+    if (layers.flow && state && !state.supply_on) {
+      const dmax = Math.max(...nodes.map((n) => n.deficit), 1e-6);
+      const ph2 = 0.75 + 0.25 * Math.sin(t * 2);
+      out.push(new ScatterplotLayer({
+        id: "lowpressure", data: nodes, getPosition: (n: any) => [n.lon, n.lat], radiusUnits: "meters", pickable: true,
+        getRadius: (n: any) => 4 + 16 * (n.deficit / dmax) * ph2, getFillColor: (n: any) => [245, 181, 68, 30 + 110 * (n.deficit / dmax)],
+        stroked: false, updateTriggers: { getRadius: t },
+      }));
+    }
+    if (layers.flow && state?.supply_on) {
       out.push(new TripsLayer({
         id: "flow", data: net.trips, getPath: (d: any) => d.p, getTimestamps: (d: any) => d.t,
         getColor: [125, 235, 255], opacity: 0.85, widthMinPixels: 2.2, jointRounded: true, capRounded: true,
@@ -129,7 +134,7 @@ export default function MapView() {
       out.push(new ColumnLayer({
         id: "cols", data: top, diskResolution: 24, radius: 7, extruded: true, radiusUnits: "meters",
         getPosition: (d: any) => [nodes[d.node].lon, nodes[d.node].lat],
-        getElevation: (d: any) => 20 + 150 * (d.p / pmax), elevationScale: 1,
+        getElevation: (d: any) => 12 + 600 * d.p, elevationScale: 1,
         getFillColor: (d: any) => heat(Math.min(1, 0.45 + 0.55 * (d.p / pmax)), 235),
         material: { ambient: 0.6, diffuse: 0.7, shininess: 40 },
         transitions: { getElevation: { duration: 900, easing: (x: number) => 1 - (1 - x) ** 3 } },
@@ -177,10 +182,10 @@ export default function MapView() {
       if (alerting) {
         out.push(new TextLayer({
           id: "ranks", data: state.top.slice(0, 1).map((d, k) => ({ ...d, k })),
-          getPosition: (d: any) => [nodes[d.node].lon, nodes[d.node].lat, 32 + 150 * (d.p / pmax)],
-          getText: (d: any) => `#1 most likely · ${(100 * d.p).toFixed(0)}%`, getSize: 14, getColor: [255, 255, 255, 255], fontWeight: 700,
+          getPosition: (d: any) => [nodes[d.node].lon, nodes[d.node].lat, 24 + 600 * d.p],
+          getText: (d: any) => `#1 of ${state.credible90.length} · ${(100 * d.p).toFixed(0)}% · unconfirmed`, getSize: 13, getColor: [255, 255, 255, 255], fontWeight: 700,
           fontFamily: "Space Grotesk Variable, sans-serif", background: true, getBackgroundColor: [12, 24, 40, 230],
-          backgroundPadding: [6, 3], getBorderColor: [255, 107, 107, 255], getBorderWidth: 1.5,
+          backgroundPadding: [6, 3], getBorderColor: [255, 255, 255, 60], getBorderWidth: 1,
           getPixelOffset: [0, -12], billboard: true,
         }));
       }
@@ -192,7 +197,7 @@ export default function MapView() {
       radiusUnits: "meters", getRadius: 4, getFillColor: [167, 139, 250, 255], pickable: true,
     }));
     out.push(new TextLayer({
-      id: "poi-text", data: net.pois.filter((p) => p.pharmacy || p.kind === "school"),
+      id: "poi-text", data: net.pois,
       getPosition: (d: any) => [d.lon, d.lat], getText: (d: any) => d.name, getSize: 11,
       getColor: [196, 181, 253, 210], getPixelOffset: [0, -14], fontFamily: "Inter Variable, sans-serif",
       extensions: [collide], collisionGroup: "labels", getCollisionPriority: (d: any) => (d.pharmacy ? 1 : 0),
@@ -204,14 +209,14 @@ export default function MapView() {
       material: { ambient: 0.7, diffuse: 0.6 },
     }));
     out.push(new TextLayer({
-      id: "tank-text", data: [src], getPosition: (n: any) => [n.lon, n.lat, 40], getText: () => "Overhead tank",
+      id: "tank-text", data: [src], getPosition: (n: any) => [n.lon, n.lat, 40], getText: () => "Tank · टंकी",
       getSize: 12, getColor: [165, 243, 252, 255], fontFamily: "Inter Variable, sans-serif",
     }));
 
     // focus ripple from intake (new complaint / field test)
     if (focus && Date.now() - focus.at < 6000) {
       const ph = ((Date.now() - focus.at) % 1500) / 1500;
-      const col: RGBA = focus.kind === "test" ? [96, 165, 250, 255] : [255, 170, 60, 255];
+      const col: RGBA = focus.kind === "test" ? [96, 165, 250, 255] : focus.kind === "alert" ? [255, 107, 107, 255] : [255, 170, 60, 255];
       out.push(new ScatterplotLayer({
         id: "focus", data: [0, 1, 2], getPosition: () => [focus.lon, focus.lat], radiusUnits: "meters",
         getRadius: (k: any) => 8 + ((ph + k / 3) % 1) * 70, filled: false, stroked: true,
@@ -220,7 +225,7 @@ export default function MapView() {
       }));
     }
     return out;
-  }, [net, state, layers, t, alerting, pmax, focus]);
+  }, [net, state, layers, t, alerting, pmax, focus, drawer]);
 
   const tooltip = ({ object, layer }: any) => {
     if (!object || !net) return null;
@@ -236,7 +241,8 @@ export default function MapView() {
     if (layer.id === "tests") return { html: `<b>Field test, day ${object.day}</b><br/>${object.failed ? "FAILED: below 0.2 mg/L" : "passed"}`, style };
     if (layer.id === "suggest") return { html: `<b>Suggested next test</b><br/>${object.label}`, style };
     if (layer.id === "cols") return { html: `<b>${object.label}</b><br/>${(100 * object.p).toFixed(0)}% of the event probability`, style };
-    if (layer.id === "pois") return { html: `<b>${object.name}</b><br/>partner pharmacy (aggregate ORS counts)`, style };
+    if (layer.id === "pois") return { html: `<b>${object.name}</b><br/>partner medical store (aggregate ORS counts, by agreement)`, style };
+    if (layer.id === "lowpressure") return { html: `<b>${object.label}</b><br/>low-pressure exposure (supply off): ${object.deficit.toFixed(1)} pressure-deficit hours/day`, style };
     return null;
   };
 
@@ -248,7 +254,7 @@ export default function MapView() {
         layers={deckLayers}
         effects={[lighting]}
         getTooltip={tooltip}
-        useDevicePixels={true}
+        useDevicePixels={1.5}
       />
     </div>
   );
