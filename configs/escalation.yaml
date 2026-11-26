@@ -1,0 +1,34 @@
+# Escalation policy. The CITY sets every designation, SLA and threshold here; JalKavach only
+# runs the clock and keeps the record. Designations are placeholders to be mapped to the
+# municipal corporation's own office order (e.g., under the MP Municipal Corporation Act,
+# 1956 for water supply, and the MP Public Health Act, 1949 for the health officer).
+
+city: "Demo city"
+alert_threshold: auto          # "auto" = threshold calibrated to the false-alarm budget in results/
+false_alarm_budget: "≤1 false alarm per ward per quarter"
+
+notify_on_open:
+  - "District Surveillance Officer (IDSP)"     # informed, not the owner
+
+stages:
+  - id: acknowledge
+    label: "Acknowledge alert"
+    owner: "Assistant Engineer, Water Works (ward)"
+    sla_hours: 24
+  - id: sample
+    label: "Take field tests at suggested taps"
+    owner: "Assistant Engineer + Amrut Mitra field team"
+    sla_hours: 48
+  - id: decide
+    label: "Confirm or clear; issue work order"
+    owner: "Executive Engineer, Water Works (zone)"
+    sla_hours: 24
+
+escalation_chain:               # who is notified, in order, when a stage is overdue
+  - "Executive Engineer, Water Works (zone)"
+  - "Superintending Engineer, Water Works"
+  - "Additional Commissioner"
+  - "Commissioner"
+escalate_every_hours: 12        # next level notified every N hours a stage stays overdue
+
+advisory_approver: "Health Officer, Municipal Corporation"   # legal authority for advisories

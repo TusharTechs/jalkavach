@@ -1,4 +1,4 @@
-.PHONY: setup test demo physics eval report clean
+.PHONY: setup test demo dashboard replay physics eval report clean
 
 setup:            ## install pinned environment
 	uv sync --frozen
@@ -15,6 +15,12 @@ eval:             ## run the pre-registered evaluation (ward + Net3)
 
 report:           ## tables and figures from the last eval
 	uv run python -m harness.report --tag ward --tag net3
+
+dashboard:        ## Streamlit dashboard (offline)
+	uv run streamlit run app/dashboard.py
+
+replay:           ## rebuild the dashboard replay scenario
+	uv run python -m jalkavach.demo
 
 physics:          ## rebuild OSM/elevation/hydraulics cache (needs network)
 	rm -f data/cache/physics_*.npz

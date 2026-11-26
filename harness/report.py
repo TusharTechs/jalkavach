@@ -261,6 +261,9 @@ def _figures(tag, df, main, nulls, methods, thr, out):
         ax.plot([p[0] for p in pts], [p[1] for p in pts], "o-", label=LABEL[m],
                 color="black" if m == "H" else None)
     ax.set_xscale("log")
+    ax.set_xticks([0.25, 0.5, 1, 2, 3, 6])
+    ax.set_xticklabels(["0.25", "0.5", "1", "2", "3", "6"])
+    ax.minorticks_off()
     ax.set_xlabel("false alarms per ward per quarter")
     ax.set_ylabel("median days from onset to alarm")
     ax.legend(fontsize=7, frameon=False)

@@ -21,7 +21,9 @@ JalKavach joins them into one ward-level alert. Each alert carries:
 | Exposure prior | Scores each location by pipe age, sewer alongside, and *pressure-deficit hours*. The deficit is an exposure feature informed by Kumpel & Nelson's intermittent-supply field work, swept over 5/10/15 psi. | Derived |
 | Reachability | Runs one EPANET source-trace simulation per candidate ingress location, giving the share of each node's consumed water that passed through it. | Derived |
 | Bayesian engine | Computes a joint posterior over *(location × onset day × intensity)* plus an explicit **no-event** hypothesis. Complaints and pharmacy counts use negative-binomial likelihoods with delay and geocoding kernels. Field tests are kit-agnostic: chlorine (read instantly) or H2S (read the next day). Low chlorine at the network's tail ends is treated as normal and modelled, never assumed to mean contamination. | — |
-| Escalation | Drafts work orders and advisories (a human approves and sends them), runs an SLA clock and keeps a hash-chained audit log. | *In progress* |
+| Escalation | The city sets owners, SLAs and the escalation chain (`configs/escalation.yaml`). JalKavach runs the clock, drafts the work order and the Hindi/English advisory (a human approves and sends them), and records everything in a hash-chained audit log. | — |
+| Complaint intake | Local Hindi speech recognition (faster-whisper), offline extraction of colour, odour, symptoms and place that tolerates ASR spelling variants, and phonetic fuzzy geocoding to OSM landmarks and streets. | Demo voice clips: synthetic (TTS) |
+| Field-test reader | A printable card with ArUco markers, white balance and the kit's colour scale. It screens a photo against the IS 10500 limit of 0.2 mg/L free chlorine, or flags H2S-vial blackening. Screening only. | Validated on synthetic photos only. **Lab validation pending.** |
 
 Hospital admissions are **not** an input to the detector. They are the baseline that detection lead time is measured against.
 
@@ -53,8 +55,18 @@ Reproduce: `make eval` (about 3 minutes on 8 cores), then `make report`.
 ```bash
 make setup   # uv sync --frozen (Python 3.12)
 make test    # offline, uses committed cache in data/cache
-make demo    # offline demo scenario
+make demo    # offline demo scenario (CLI)
+make dashboard   # Streamlit dashboard at http://localhost:8501 (offline)
 ```
+
+The dashboard has five tabs:
+- **Ward map:** replay by day.
+- **Alert & escalation:** the city clock, owners and drafts.
+- **Intake:** voice notes and kit photos, which update the posterior live.
+- **Results.**
+- **Audit log:** includes a tamper test.
+
+The replay scenario was chosen to be *typical*. Its detection delay and localisation match the harness medians (`src/jalkavach/demo.py`).
 
 ## Honest limitations
 

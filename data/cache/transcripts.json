@@ -1,0 +1,27 @@
+{
+ "8490fc894476ec94": {
+  "text": "अरोगे मेदीकल स्थोर के पास नल में पीला पानी आ रहा है, बद्बू भी है।",
+  "model": "faster-whisper-medium",
+  "file": "clip1.wav"
+ },
+ "11d318a6386bd005": {
+  "text": "चुहान क्लिनिक के सामने वाली गली में पानी गंडा आ रहा है, बच्छों को दस्थ हो रहे हैं",
+  "model": "faster-whisper-medium",
+  "file": "clip2.wav"
+ },
+ "1cd0bc7bc9c57422": {
+  "text": "सर्कारी स्कूल के पास पानी में नाली जैसी बद्बू है",
+  "model": "faster-whisper-medium",
+  "file": "clip3.wav"
+ },
+ "0d0e176f8fb4e616": {
+  "text": "देविंद्र मेदीकल के पासकल से पानी मतमैला है, घर में दो लोगों को उल्ती हुई।",
+  "model": "faster-whisper-medium",
+  "file": "clip4.wav"
+ },
+ "8236dfdb76c0d741": {
+  "text": "रगुवनश मेदिकोस के पीचे पानी में जाग और बद्बू आ रही हैं",
+  "model": "faster-whisper-medium",
+  "file": "clip5.wav"
+ }
+}

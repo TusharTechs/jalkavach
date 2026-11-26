@@ -22,3 +22,6 @@ results/raw_*.json
 results/*quick*
 results/figures/*quick*
 data/cache/worlds_3.npz
+
+# local tooling
+.claude/

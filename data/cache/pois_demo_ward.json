@@ -1,0 +1,65 @@
+[
+{
+"name": "Sarvottam Ayurvedic Clinic",
+"name_hi": "सर्वोत्तम आयुर्वेदिक क्लिनिक",
+"kind": "clinic",
+"lat": 22.7675366,
+"lon": 75.8477274
+},
+{
+"name": "Devendra Medical",
+"name_hi": "देवेंद्र मेडिकल",
+"kind": "pharmacy",
+"lat": 22.7663443,
+"lon": 75.8473996
+},
+{
+"name": "Arogya Medical Store",
+"name_hi": "आरोग्य मेडिकल स्टोर",
+"kind": "pharmacy",
+"lat": 22.7599016,
+"lon": 75.8478606
+},
+{
+"name": "Chouhan Clinic",
+"name_hi": "चौहान क्लिंनिक",
+"kind": "clinic",
+"lat": 22.7603213,
+"lon": 75.8477999
+},
+{
+"name": "Raghuvansh Medicose",
+"name_hi": "रघुवंश मेडिकोज",
+"kind": "pharmacy",
+"lat": 22.7597494,
+"lon": 75.8478807
+},
+{
+"name": "Government Public School Bhagirathpura",
+"name_hi": "गवर्नमेंट पब्लिक स्कूल भागीरथपुरा",
+"kind": "school",
+"lat": 22.7636685,
+"lon": 75.8470211
+},
+{
+"name": "Sulabh Complex",
+"name_hi": "सुलभ कोम्प्लेक्स",
+"kind": "toilets",
+"lat": 22.7631491,
+"lon": 75.84833
+},
+{
+"name": "Swacch Bharat Mission",
+"name_hi": "स्वच्छ भारत मिशन",
+"kind": "toilets",
+"lat": 22.764366,
+"lon": 75.8453903
+},
+{
+"name": "Sulabh Complex",
+"name_hi": "सुलभ कोम्प्लेक्स",
+"kind": "toilets",
+"lat": 22.7662419,
+"lon": 75.8479947
+}
+]
