@@ -11,7 +11,15 @@ JalKavach joins them into one ward-level alert. Each alert carries:
 - an **owner**, and
 - an **audit trail**.
 
-> Status: hackathon prototype (BUILD 2036). The engine and the evaluation harness are under active development.
+> Status: hackathon prototype for BUILD 2036 (TiE Global Summit 2026), Frontier 06: The Rise of New India. Every result below is simulated, not field data.
+
+![JalKavach architecture](docs/architecture.png)
+
+**Docs:**
+- [Impact case](docs/IMPACT_CASE.md)
+- [Evaluation results](results/RESULTS.md)
+- [Pre-registration](harness/PREREGISTRATION.md)
+- [Escalation policy](configs/escalation.yaml)
 
 ## How it works
 

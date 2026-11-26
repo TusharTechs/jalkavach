@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+    <style>
+      .t{font-size:17px;font-weight:700;fill:#1b2a3a}
+      .s{font-size:13px;fill:#33475b}
+      .h{font-size:14px;font-weight:700;fill:#ffffff;letter-spacing:.5px}
+      .ln{stroke:#555;stroke-width:1.8;fill:none;marker-end:url(#a)}
+      .dash{stroke:#999;stroke-width:1.6;fill:none;stroke-dasharray:6 5;marker-end:url(#a)}
+    </style>
+  </defs>
+  <rect width="1500" height="900" fill="#ffffff"/>
+  <text x="40" y="44" style="font-size:26px;font-weight:800;fill:#0b3d63">JalKavach architecture</text>
+  <text x="40" y="70" class="s">Signals the city already collects, an intermittent-supply network twin, a calibrated Bayesian engine, and the city's own escalation clock. Runs offline.</text>
+
+  <!-- column headers -->
+  <rect x="30" y="95" width="250" height="30" rx="6" fill="#0b3d63"/><text x="45" y="115" class="h">1 · SIGNALS (EXISTING)</text>
+  <rect x="310" y="95" width="270" height="30" rx="6" fill="#0b3d63"/><text x="325" y="115" class="h">2 · INTAKE</text>
+  <rect x="610" y="95" width="370" height="30" rx="6" fill="#0b3d63"/><text x="625" y="115" class="h">3 · NETWORK TWIN + BAYESIAN ENGINE</text>
+  <rect x="1010" y="95" width="460" height="30" rx="6" fill="#0b3d63"/><text x="1025" y="115" class="h">4 · DECISION &amp; ACCOUNTABILITY</text>
+
+  <!-- signals -->
+  <g>
+    <rect x="30" y="145" width="250" height="88" rx="10" fill="#fff4e5" stroke="#f0a04b"/>
+    <text x="45" y="172" class="t">Citizen complaints</text>
+    <text x="45" y="194" class="s">311 · CM Helpline 181 · Jal Sunwai</text>
+    <text x="45" y="213" class="s">Hindi / Hinglish voice or text</text>
+
+    <rect x="30" y="250" width="250" height="88" rx="10" fill="#e8f6ec" stroke="#4caf6a"/>
+    <text x="45" y="277" class="t">Field tests</text>
+    <text x="45" y="299" class="s">Amrut Mitra kit readings</text>
+    <text x="45" y="318" class="s">chlorine or H2S · photo of card</text>
+
+    <rect x="30" y="355" width="250" height="88" rx="10" fill="#f1ebfa" stroke="#9467bd"/>
+    <text x="45" y="382" class="t">Partner pharmacies</text>
+    <text x="45" y="404" class="s">aggregate daily ORS / anti-</text>
+    <text x="45" y="423" class="s">diarrhoeal counts · no customer data</text>
+
+    <rect x="30" y="460" width="250" height="88" rx="10" fill="#f7f7f7" stroke="#bbbbbb" stroke-dasharray="5 4"/>
+    <text x="45" y="487" class="t" style="fill:#777">Hospital admissions</text>
+    <text x="45" y="509" class="s" style="fill:#777">NOT an input: the baseline</text>
+    <text x="45" y="528" class="s" style="fill:#777">we measure lead time against</text>
+
+    <rect x="30" y="565" width="250" height="110" rx="10" fill="#eef4fb" stroke="#5b8fc9"/>
+    <text x="45" y="592" class="t">Open geodata</text>
+    <text x="45" y="614" class="s">OpenStreetMap streets + landmarks</text>
+    <text x="45" y="633" class="s">Copernicus DEM elevations</text>
+    <text x="45" y="652" class="s">utility pipe GIS (when shared)</text>
+  </g>
+
+  <!-- intake -->
+  <g>
+    <rect x="310" y="145" width="270" height="110" rx="10" fill="#ffffff" stroke="#f0a04b" stroke-width="1.5"/>
+    <text x="325" y="172" class="t">Voice → structured complaint</text>
+    <text x="325" y="194" class="s">faster-whisper Hindi ASR (local)</text>
+    <text x="325" y="213" class="s">extractor: colour · odour · symptoms</text>
+    <text x="325" y="232" class="s">phonetic geocoder → node + radius</text>
+
+    <rect x="310" y="270" width="270" height="92" rx="10" fill="#ffffff" stroke="#4caf6a" stroke-width="1.5"/>
+    <text x="325" y="297" class="t">Kit reader (screening)</text>
+    <text x="325" y="319" class="s">ArUco card · white balance · CIE-LAB</text>
+    <text x="325" y="338" class="s">&lt; 0.2 mg/L (IS 10500) or H2S +</text>
+
+    <rect x="310" y="377" width="270" height="70" rx="10" fill="#ffffff" stroke="#9467bd" stroke-width="1.5"/>
+    <text x="325" y="404" class="t">Syndromic series</text>
+    <text x="325" y="425" class="s">ward-level daily counts</text>
+  </g>
+
+  <!-- engine -->
+  <g>
+    <rect x="610" y="145" width="370" height="200" rx="12" fill="#eef4fb" stroke="#5b8fc9" stroke-width="1.5"/>
+    <text x="625" y="172" class="t">Intermittent-supply network twin</text>
+    <text x="625" y="196" class="s">EPANET 2.2 (WNTR) · pressure-dependent demand</text>
+    <text x="625" y="215" class="s">supply windows from a tank-head schedule</text>
+    <text x="625" y="240" class="s">→ source-trace reachability tensor R[c, n]</text>
+    <text x="625" y="259" class="s">→ baseline chlorine decay (tail ends are low)</text>
+    <text x="625" y="278" class="s">→ pressure-deficit exposure (5/10/15 psi)</text>
+    <text x="625" y="303" class="s">exposure prior: pipe age · sewer alongside ·</text>
+    <text x="625" y="322" class="s">pressure deficit (tempered)</text>
+
+    <rect x="610" y="365" width="370" height="200" rx="12" fill="#0b3d63"/>
+    <text x="625" y="393" class="t" style="fill:#ffffff">Bayesian ingress engine</text>
+    <text x="625" y="417" class="s" style="fill:#dbe8f5">joint posterior over location × onset × intensity</text>
+    <text x="625" y="436" class="s" style="fill:#dbe8f5">+ explicit no-event hypothesis H0</text>
+    <text x="625" y="460" class="s" style="fill:#dbe8f5">negative-binomial likelihoods with delay +</text>
+    <text x="625" y="479" class="s" style="fill:#dbe8f5">geocoding kernels; kit likelihood vs. baseline Cl</text>
+    <text x="625" y="503" class="s" style="fill:#dbe8f5">outputs: P(event) · ranked segments ·</text>
+    <text x="625" y="522" class="s" style="fill:#dbe8f5">90% credible set · evidence per signal</text>
+    <text x="625" y="546" class="s" style="fill:#9fc3e6">~20 ms per update on a laptop</text>
+  </g>
+
+  <!-- decision -->
+  <g>
+    <rect x="1010" y="145" width="220" height="100" rx="10" fill="#fdecea" stroke="#d62728" stroke-width="1.5"/>
+    <text x="1025" y="172" class="t">Calibrated alert</text>
+    <text x="1025" y="194" class="s">threshold set for ≤1 false</text>
+    <text x="1025" y="213" class="s">alarm per ward per quarter</text>
+    <text x="1025" y="232" class="s">("no alert ≠ safe")</text>
+
+    <rect x="1250" y="145" width="220" height="100" rx="10" fill="#e8f1fb" stroke="#1f77b4" stroke-width="1.5"/>
+    <text x="1265" y="172" class="t">Next-test routing</text>
+    <text x="1265" y="194" class="s">expected information gain</text>
+    <text x="1265" y="213" class="s">→ which taps the field</text>
+    <text x="1265" y="232" class="s">team should test next</text>
+
+    <rect x="1010" y="265" width="460" height="130" rx="10" fill="#fff8e1" stroke="#c9a227" stroke-width="1.5"/>
+    <text x="1025" y="292" class="t">The city's escalation clock (configs/escalation.yaml)</text>
+    <text x="1025" y="316" class="s">Acknowledge (AE, 24 h) → Field tests (AE + Amrut Mitras, 48 h) →</text>
+    <text x="1025" y="335" class="s">Confirm / clear (EE, 24 h). Overdue → EE → SE → Addl. Commissioner</text>
+    <text x="1025" y="354" class="s">→ Commissioner. The city sets every owner, SLA and threshold.</text>
+    <text x="1025" y="377" class="s">DSO (IDSP) notified when an alert opens.</text>
+
+    <rect x="1010" y="415" width="220" height="130" rx="10" fill="#ffffff" stroke="#555" stroke-width="1.2"/>
+    <text x="1025" y="442" class="t">Drafts, never sent</text>
+    <text x="1025" y="464" class="s">work order (ranked</text>
+    <text x="1025" y="483" class="s">segments) · Hindi + English</text>
+    <text x="1025" y="502" class="s">boil-water advisory → needs</text>
+    <text x="1025" y="521" class="s">Health Officer approval</text>
+
+    <rect x="1250" y="415" width="220" height="130" rx="10" fill="#ffffff" stroke="#555" stroke-width="1.2"/>
+    <text x="1265" y="442" class="t">Audit log</text>
+    <text x="1265" y="464" class="s">hash-chained SQLite</text>
+    <text x="1265" y="483" class="s">who acted, when, on time?</text>
+    <text x="1265" y="502" class="s">tampering is detectable</text>
+    <text x="1265" y="521" class="s">protects officers who acted</text>
+
+    <rect x="1010" y="565" width="460" height="110" rx="10" fill="#f4f6f8" stroke="#8a9aab"/>
+    <text x="1025" y="592" class="t">Who sees what</text>
+    <text x="1025" y="614" class="s">Ward engineer: ranked pipes + work order · Field team: where to test</text>
+    <text x="1025" y="633" class="s">Health Officer: advisory to approve · DSO: early notification</text>
+    <text x="1025" y="652" class="s">Commissioner: clock status across wards · Citizens: nothing auto-sent</text>
+  </g>
+
+  <!-- arrows -->
+  <path class="ln" d="M280,190 L308,195"/>
+  <path class="ln" d="M280,295 L308,312"/>
+  <path class="ln" d="M280,400 L308,410"/>
+  <!-- intake bus into the engine -->
+  <path style="stroke:#555;stroke-width:1.8;fill:none" d="M580,200 L594,200 M580,316 L594,316 M580,412 L594,412 M594,200 L594,465"/>
+  <path class="ln" d="M594,465 L608,465"/>
+  <!-- geodata into the network twin -->
+  <path class="ln" d="M280,620 L601,620 L601,300 L608,300"/>
+  <path class="ln" d="M795,345 L795,363"/>
+  <!-- engine to alert, alert to routing / clock -->
+  <path class="ln" d="M980,400 L995,400 L995,195 L1008,195"/>
+  <path class="ln" d="M1230,195 L1248,195"/>
+  <path class="ln" d="M1120,245 L1120,263"/>
+  <path class="ln" d="M1120,395 L1120,413"/>
+  <path class="ln" d="M1230,480 L1248,480"/>
+  <path class="ln" d="M1240,545 L1240,563"/>
+  <!-- feedback: suggested tests become new field tests -->
+  <path class="dash" d="M1470,195 L1488,195 L1488,712 L296,712 L296,345 L282,330"/>
+  <text x="640" y="705" class="s" style="fill:#777">field tests at suggested taps feed back as new evidence</text>
+  <!-- hospital admissions only used for evaluation -->
+  <path class="dash" d="M30,505 L18,505 L18,800 L28,800"/>
+  <text x="34" y="732" class="s" style="fill:#999">(baseline only)</text>
+  <!-- evaluation strip -->
+  <rect x="30" y="740" width="1440" height="130" rx="12" fill="#f0f7f1" stroke="#4caf6a"/>
+  <text x="50" y="770" class="t">Evaluation harness (pre-registered; harness/PREREGISTRATION.md)</text>
+  <text x="50" y="795" class="s">1,120 held-out simulated scenarios on the demo ward + 400 on EPANET Net3 · 10 perturbed networks · clustered complaint process the engine does not assume ·</text>
+  <text x="50" y="815" class="s">truth from a different risk model · baselines: hospital-admissions EARS, complaint-count EARS, complaint centroid · ablations: fusion vs. single signals, priors, routing</text>
+  <text x="50" y="845" style="font-size:15px;font-weight:700;fill:#1e6b35">Median lead over hospital-only baseline 7.0 [6.0–8.0] days · detected 94% vs 52% · true segment in top 3: 67% vs 12% · 90% sets cover 95%</text>
+</svg>
