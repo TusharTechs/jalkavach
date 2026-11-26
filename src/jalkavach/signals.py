@@ -20,6 +20,7 @@ class SignalParams:
     complaint_base: float = 0.03
     complaint_rate: float = 30.0            # extra at full contamination (smell/colour is noticeable); swept in harness
     complaint_k: float = 1.5                # NB dispersion
+    complaint_temper: float = 0.4           # likelihood tempering for misspecification (chosen on dev seeds for 90% coverage)
     complaint_delay_mean: float = 1.5       # days, geometric
     geocode_radius_m: float = 120.0
     # pharmacy ORS / anti-diarrhoeal units per day (aggregated partner pharmacies)

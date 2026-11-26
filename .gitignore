@@ -16,3 +16,9 @@ research/
 temp.*
 *.rpt
 *.bin
+
+# evaluation: raw outputs are reproducible via `make eval`; dev (quick) runs stay local
+results/raw_*.json
+results/*quick*
+results/figures/*quick*
+data/cache/worlds_3.npz

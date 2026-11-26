@@ -1,0 +1,73 @@
+# Evaluation pre-registration
+
+Written **before** the first harness run (27 Nov 2026). If a metric or threshold changes after we see results, the change is logged at the bottom of this file with the reason.
+
+## Questions
+1. **Detection.** Does fusing complaints, field tests and pharmacy counts detect a sewage-ingress event earlier than a hospital-admissions-only baseline, at a fixed false-alarm budget?
+2. **Fusion.** Does fusion beat the best single signal at the same false-alarm budget?
+3. **Intermittent-supply prior (ablation 1).** Does an exposure prior that includes the pressure-deficit feature localise better than a 24×7-style prior (age + sewer only)? Does it beat a uniform prior?
+4. **Routing (ablation 3).** After an alert, does information-gain test routing need fewer field tests to get the true location into the top 3 than random or nearest-complaint sampling?
+5. **Calibration.** Do the 90% credible sets contain the true location about 90% of the time?
+
+## Scenario distribution (held out from the engine)
+- Horizon: 21 days. Onset day t0 ~ U{3..10}.
+- **True ingress location.** Drawn from a *physical risk model* with a different functional form from the engine's prior:
+  `risk ∝ sewer_share × sigmoid(pressure deficit) × (age/60)^0.5 + 0.02`
+  The prior is additive in z-scores; this risk model is multiplicative. We also report results with locations drawn **uniformly**.
+- **Intensity.** Continuous, I ~ U(0.03, 0.5). The engine only knows the grid {0.05, 0.15, 0.4}.
+- **Ramp days.** U{1..5}. The engine assumes 3.
+- **Complaint process.** Generated with the **clustered** model (Poisson × Gamma bursts), not the engine's negative binomial.
+  - Rate × U(0.5, 2) relative to the engine.
+  - Delay mean ~ U(0.5, 3) days. The engine assumes 1.5.
+  - Geocode radius ~ U(60, 250) m. The engine assumes 120.
+- **Reporting propensity.** The true per-node value is the engine's value × U(0.6, 1.4) noise (clipped).
+- **Network mismatch (K = 10 perturbed networks).**
+  - Roughness × U(0.7, 1.3) per pipe.
+  - 20% of pipes get the wrong diameter tier.
+  - Junction demand × U(0.7, 1.3).
+  - Each perturbed network gets a recomputed trace tensor and chlorine baseline for the *generator*. The engine always uses the nominal network.
+- **Pharmacy.** Lag ~ U(1, 4) days; rate × U(0.5, 2).
+- **Field tests (chlorine kit, read immediately).**
+  - Routine: 1 random tap per day per ward.
+  - Complaint-triggered: next day, at the geocoded node of up to 2 complaints per day.
+  - The same for every method.
+- **No-event runs:** same distributions, no ingress. Used to calibrate alarm thresholds.
+
+## Alarm calibration
+- Each method gets its own threshold so that **≤1 false-alarm episode per ward per quarter** (90 days) on no-event runs. We also report results at ≤1 per ward per month.
+- An episode is the first threshold crossing in a 21-day no-event run.
+- The rate is scaled as `P(any alarm in run) × 90 / 21`.
+
+## Methods
+| ID | Method |
+|---|---|
+| F | Fusion posterior (complaints + tests + pharmacy), intermittent prior |
+| C | Posterior, complaints only |
+| T | Posterior, field tests only |
+| S | Posterior, pharmacy only |
+| H | **Baseline:** hospital admissions, EARS-C2-style exceedance on daily counts (7-day baseline, 2-day guard) |
+| CC | **Baseline:** complaint count exceedance (EARS-C2) for detection; complaint-centroid for localisation |
+| F-24x7 | F with the 24×7 prior (no pressure term) |
+| F-unif | F with a uniform prior |
+
+## Metrics (all with 95% bootstrap CIs, 2,000 resamples)
+- **Headline:** median detection lead time of F over H (days), on paired scenarios at the quarterly false-alarm budget. A missed detection counts as detection at day 21 (censored); the censoring rate is reported.
+- Detection delay (days after onset) per method, and the share detected within the horizon.
+- Top-3 localisation accuracy at the detection day and at detection + 3 days.
+- **Ablation 1:** top-3 accuracy, F vs F-24x7 vs F-unif, on (a) physical-risk truth and (b) uniform truth.
+- **Ablation 3:** number of routed field tests (2 per day after the first alarm) until the truth enters the top 3. Info-gain vs random vs nearest-complaint.
+- **Calibration:** coverage of the 90% credible set at the detection day, plus a reliability diagram over 10 bins of the predicted p(location).
+- **Sensitivity sweeps:** complaint delay mean {0.5, 1.5, 3}, geocode radius {60, 120, 250} m, psi {5, 10, 15}.
+- **Equity:** detection delay split by the reporting-propensity tercile of the population exposed.
+- **Failure cases:** missed and mislocalised scenarios, with their parameters, published in `results/failures.csv`.
+
+## Second topology (robustness only)
+- EPANET example network Net3, 24×7 supply, uniform prior, same signal-mismatch distribution.
+- Ingress scenarios on Net3 are ours. It is **not** an India-realism benchmark.
+
+## Change log
+- **27 Nov, after the development (quick) run, before the held-out run.**
+  - **Calibration.** On development seeds, coverage of the 90% credible set was 74–82%, so the engine was overconfident under misspecification.
+  - **Change.** Added complaint-likelihood tempering (`complaint_temper = 0.4`), chosen on development seeds 500–579 to bring coverage to about 0.89. It did not change top-3 accuracy (0.55–0.57 across the temper values tried).
+  - **Seeds.** The held-out run now uses fresh seeds (base 100,000), disjoint from the development seeds (1,000–31,000 and 500–579).
+  - **Metrics.** No metric, threshold or scenario distribution was changed.

@@ -41,7 +41,7 @@ def uniform_prior(index) -> pd.Series:
     return pd.Series(1.0 / len(index), index=index)
 
 
-def reporting_propensity(ward: WardNetwork, seed: int = 0, low: float = 0.3,
+def reporting_propensity(xy: np.ndarray, index, seed: int = 0, low: float = 0.3,
                          high: float = 1.0) -> pd.Series:
     """Synthetic per-node complaint reporting propensity (smartphone/app access proxy).
 
@@ -50,9 +50,8 @@ def reporting_propensity(ward: WardNetwork, seed: int = 0, low: float = 0.3,
     sensitivity use this.
     """
     rng = np.random.default_rng(seed + 101)
-    xy = ward.nodes[["x", "y"]].to_numpy()
     direction = rng.normal(size=2)
     direction /= np.linalg.norm(direction)
     proj = xy @ direction
     proj = (proj - proj.min()) / (np.ptp(proj) or 1.0)
-    return pd.Series(low + (high - low) * proj, index=ward.nodes.index)
+    return pd.Series(low + (high - low) * proj, index=index)
