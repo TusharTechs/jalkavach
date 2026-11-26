@@ -1,4 +1,4 @@
-.PHONY: setup test demo dashboard replay physics eval report clean
+.PHONY: setup test demo app web dashboard replay physics eval report clean
 
 setup:            ## install pinned environment
 	uv sync --frozen
@@ -16,7 +16,13 @@ eval:             ## run the pre-registered evaluation (ward + Net3)
 report:           ## tables and figures from the last eval
 	uv run python -m harness.report --tag ward --tag net3
 
-dashboard:        ## Streamlit dashboard (offline)
+app:              ## JalKavach command centre at http://localhost:8036 (offline; uses committed web/dist)
+	uv run uvicorn app.server:app --host 127.0.0.1 --port 8036
+
+web:              ## rebuild the web front end (needs Node 22 + pnpm)
+	cd web && pnpm install && pnpm build
+
+dashboard:        ## legacy Streamlit dashboard (offline)
 	uv run streamlit run app/dashboard.py
 
 replay:           ## rebuild the dashboard replay scenario

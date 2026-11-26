@@ -132,3 +132,35 @@ def pressure_deficit(h: HydraulicResult, threshold_psi: float = 10.0) -> pd.Seri
     dt_h = (t[1] - t[0]) / 3600
     return pd.Series((np.clip(thr - p, 0, None) / thr * dt_h).sum(axis=0),
                      index=h.pressure.columns)
+
+
+def supply_flows(wn: wntr.network.WaterNetworkModel, on_hours: np.ndarray) -> pd.DataFrame:
+    """Mean signed flow (m3/s) and velocity (m/s) per pipe while supply is on."""
+    m = copy.deepcopy(wn)
+    m.options.quality.parameter = "NONE"
+    with tempfile.TemporaryDirectory() as td, warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        res = wntr.sim.EpanetSimulator(m).run_sim(file_prefix=os.path.join(td, "fl"), version=2.2)
+    q = res.link["flowrate"]
+    v = res.link["velocity"]
+    hrs = (q.index.to_numpy() // 3600).astype(int) % 24
+    on = on_hours[hrs]
+    return pd.DataFrame({"flow": q[on].mean(), "velocity": v[on].abs().mean()})
+
+
+def trace_arrivals(wn: wntr.network.WaterNetworkModel, candidates: list[str], receptors: list[str],
+                   threshold_pct: float = 1.0) -> np.ndarray:
+    """A[c, n] = hours (within one supply day) until water from c first reaches n (inf if never)."""
+    base = copy.deepcopy(wn)
+    base.options.quality.parameter = "TRACE"
+    A = np.full((len(candidates), len(receptors)), np.inf)
+    with tempfile.TemporaryDirectory() as td:
+        for i, c in enumerate(candidates):
+            base.options.quality.trace_node = c
+            res = _quality_run(base, td, f"ar{i}")
+            q = res.node["quality"][receptors].to_numpy()
+            t = res.node["quality"].index.to_numpy() / 3600
+            hit = q >= threshold_pct
+            first = np.where(hit.any(axis=0), hit.argmax(axis=0), -1)
+            A[i] = np.where(first >= 0, t[np.maximum(first, 0)], np.inf)
+    return A

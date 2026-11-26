@@ -25,3 +25,6 @@ data/cache/worlds_3.npz
 
 # local tooling
 .claude/
+# web app: dependencies stay local; the built app (web/dist) is committed so `make app` needs no Node
+web/node_modules/
+web/.vite/

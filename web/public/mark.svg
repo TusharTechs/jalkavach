@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="JalKavach">
+  <defs>
+    <linearGradient id="jk-drop" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#67E8F9"/><stop offset="0.55" stop-color="#22A6F2"/><stop offset="1" stop-color="#2546E8"/>
+    </linearGradient>
+    <radialGradient id="jk-glow" cx="0.5" cy="0.62" r="0.5"><stop offset="0" stop-color="#FF6B6B" stop-opacity=".55"/><stop offset="1" stop-color="#FF6B6B" stop-opacity="0"/></radialGradient>
+  </defs>
+  <path d="M60 4C60 4 20 51 20 77a40 40 0 0 0 80 0C100 51 60 4 60 4Z" fill="url(#jk-drop)"/>
+  <g transform="translate(60 70) scale(1.12) translate(-60 -70)">
+  <path d="M60 43l21 7.5v17.3c0 13.6-9.2 23-21 28.2-11.8-5.2-21-14.6-21-28.2V50.5Z" fill="#061422"/>
+  <circle cx="60" cy="69" r="14" fill="url(#jk-glow)"/>
+  <path d="M49 63.5L60 69l11-5.5M60 69v13" stroke="#7DE3F4" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="49" cy="63.5" r="3.3" fill="#7DE3F4"/><circle cx="71" cy="63.5" r="3.3" fill="#7DE3F4"/><circle cx="60" cy="82" r="3.3" fill="#7DE3F4"/>
+  <circle cx="60" cy="69" r="4.6" fill="#FF6B6B"/>
+  </g>
+</svg>
