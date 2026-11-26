@@ -1,0 +1,29 @@
+# Demo ward configuration. Streets: OpenStreetMap (real). Pipes, sewers, ages: synthetic (seeded).
+name: demo_ward
+label: "Demo ward, Indore (real OSM streets; synthetic pipe network)"
+center: [22.7637, 75.8470]   # lat, lon
+dist_m: 450
+network_type: drive_service
+seed: 7
+
+population: 20000          # residents served by the ward network
+lpcd: 135                  # litres per capita per day (CPHEEO norm)
+
+supply:                     # intermittent supply windows, hour-of-day [start, end)
+  windows: [[6, 8], [18, 19]]
+  head_on_m: 28.0           # overhead-tank head above highest node while supplying
+  head_off_m: 0.5           # residual head above highest node while off
+  required_pressure_m: 10.0 # PDD: pressure at which full demand is met
+  minimum_pressure_m: 0.0
+
+hydraulics:
+  duration_h: 24
+  hydraulic_step_s: 900
+  quality_step_s: 300
+
+source_corner: north_west   # where the overhead tank feeds the ward
+sewer_share: 0.6            # share of street segments with a sewer line alongside
+
+chlorine:
+  dose_mg_l: 0.5            # residual leaving the overhead tank
+  bulk_per_day: -0.8        # bulk decay; older pipes add wall demand (age/30 per day)

@@ -1,0 +1,18 @@
+# environments
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+# never publish project-idea / competition research
+research/
+../research/
+*.research.md
+# local scratch
+*.inp.tmp
+/tmp/
+# osmnx HTTP cache and EPANET scratch files
+/cache/
+temp.*
+*.rpt
+*.bin
