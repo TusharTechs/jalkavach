@@ -695,6 +695,7 @@ voice = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "httpx2" },
     { name = "pytest" },
 ]
 
@@ -722,7 +723,10 @@ requires-dist = [
 provides-extras = ["voice"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.2.0" }]
+dev = [
+    { name = "httpx2", specifier = ">=2.16.2" },
+    { name = "pytest", specifier = ">=9.2.0" },
+]
 
 [[package]]
 name = "jinja2"
