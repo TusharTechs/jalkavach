@@ -127,8 +127,18 @@ def extract(text: str) -> Complaint:
         setattr(c, slot, hits)
     c.water_quality = bool(c.colour or c.odour or c.symptoms)
     m = re.search(r"(.{2,40}?)\s*(के पास|के सामने|के पीछे|वाली गली|ke paas|ke pass|near|ke saamne)", text)
-    c.place_text = m.group(1).strip() if m else None
+    c.place_text = _clean_place(m.group(1)) if m else None
     return c
+
+
+_FILLERS = {"भिया", "भैया", "भाई", "भईया", "दीदी", "सर", "जी", "हमारे", "मेरे", "bhiya", "bhaiya", "bhai", "sir", "ji"}
+
+
+def _clean_place(span: str) -> str | None:
+    """Keep only the clause naming the place: 'भिया, पार्क' -> 'पार्क' (greetings are not places)."""
+    clause = re.split(r"[,،।|]", span)[-1].strip()
+    words = [w for w in clause.split() if w.lower() not in _FILLERS]
+    return " ".join(words) or None
 
 
 # -------------------------------------------------------------- geocoding

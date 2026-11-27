@@ -14,6 +14,7 @@ import asyncio
 import base64
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -28,6 +29,42 @@ ROOT = Path(__file__).resolve().parents[1]
 SARVAM_URL = "https://api.sarvam.ai/text-to-speech"
 # romanised Hindi in captions is spoken from Devanagari by a Hindi voice (Sarvam: romanised Indic lowers quality)
 HINDI_LINES = {"Swachhta mein number one. Ab suraksha mein bhi.": "स्वच्छता में नंबर वन। अब सुरक्षा में भी।"}
+# What the narrator SAYS: written for the ear, short enough to breathe inside each story step
+# (the on-screen captions stay as they are). Keyed by the start of each caption; {..} are filled
+# from the live caption so numbers always match the screen.
+SPOKEN = [
+    ("Ward 00", "This is a ward in Indore. The streets are real; the pipes are simulated. It's seven in the morning, and the water is flowing."),
+    ("Noon", "By noon, the supply stops. The pipes lose pressure... and that's exactly when sewage can seep in."),
+    ("Day by day", "Complaints trickle in, one at a time. A smell here. Yellow water there."),
+    ("The engine weighs", "JalKavach weighs every pipe against the chance that nothing is wrong. And then... an alert."),
+    ("The alert opens", "It can't name the spot yet. But it says where to test first: {search} kilometres, not {total}."),
+    ("7 pm", "That evening, a resident sends a voice note: near the park. But several parks match, so the officer simply calls back."),
+    ("The city's clock", "Now the city's own clock is running. The ward engineer acknowledges, well within the deadline."),
+    ("Next morning", "Next morning, two routine water tests fail, close to the complaints."),
+    ("Day ", "By evening, the search is down to {km} kilometres of pipe, and about {people} residents."),
+    ("The Executive Engineer", "The engineer confirms. Then the health officer signs off on the Hindi advisory."),
+    ("A tamper-evident", "And every step lands on a record that no one can quietly rewrite."),
+    ("Tested on", "We tested all of it on simulations held back in advance, and we show what didn't work, too."),
+    ("One ward", "One ward today. Every city, by 2036. Swachhta mein number one. Ab suraksha mein bhi."),
+]
+
+
+def spoken(caption: str) -> str:
+    """The narration line for a caption, with its numbers taken from the caption itself."""
+    nums = re.findall(r"\d[\d,]*(?:\.\d+)?", caption)
+    for key, line in SPOKEN:
+        if caption.startswith(key):
+            try:
+                if "{search}" in line:
+                    return line.format(total=nums[0], search=nums[1])
+                if "{km}" in line:
+                    return line.format(km=nums[2], people=nums[4])
+            except IndexError:
+                return caption
+            return line
+    return caption
+
+
 CAPTION_JS = ("(() => { const e = document.querySelector('[role=status][aria-live=polite] span.flex-1');"
               " return e ? e.textContent : ''; })()")
 
@@ -111,7 +148,7 @@ def build(frames, captions, frames_dir: Path, out: Path, voice: str, fps: int) -
     lines = []
     for i, (ts, name) in enumerate(frames):
         dur = (frames[i + 1][0] - ts) if i + 1 < len(frames) else 1.0
-        lines += [f"file '{name}'", f"duration {max(dur, 1 / fps):.4f}"]
+        lines += [f"file '{name}'", f"duration {max(dur, 0.001):.4f}"]   # real time: never pad short frames
     lines.append(f"file '{frames[-1][1]}'")
     (frames_dir / "list.txt").write_text("\n".join(lines))
     silent = frames_dir / "video.mp4"
@@ -125,26 +162,29 @@ def build(frames, captions, frames_dir: Path, out: Path, voice: str, fps: int) -
     clips = []                                   # (start_s, wav, duration_s)
     for k, (ts, text) in enumerate(captions):
         wav = frames_dir / f"c{k}.wav"
-        tts(text, wav, voice)
+        tts(spoken(text), wav, voice)
         clips.append([max(0.0, ts - t0), wav, _dur(wav)])
+        print(f"  tts {k:2d}: {clips[-1][2]:4.1f}s  {spoken(text)[:60]}")
     # fit: a line may be sped up a little to end before the next caption; never overlap the next line
     end_prev = 0.0
     for k, c in enumerate(clips):
         slot = (clips[k + 1][0] - c[0] - 0.25) if k + 1 < len(clips) else 1e9
         if c[2] > slot > 0:
-            f = min(c[2] / slot, 1.15)
+            f = min(c[2] / slot, 1.06)              # beyond ~6% faster, speech stops sounding natural
             fast = c[1].with_name(c[1].stem + "_fit.wav")
             subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(c[1]), "-filter:a", f"atempo={f:.3f}", str(fast)], check=True)
             c[1], c[2] = fast, _dur(fast)
-        c[0] = max(c[0], end_prev + 0.2)
+        late = max(0.0, end_prev + 0.2 - c[0])
+        c[0] += late
         end_prev = c[0] + c[2]
+        print(f"  line {k:2d}: at {c[0]:5.1f}s  {c[2]:4.1f}s long  slot {min(slot, 99):4.1f}s" + (f"  LATE {late:.1f}s" if late else ""))
     inputs, filters = [], []
     for k, (start, wav, _) in enumerate(clips):
         inputs += ["-i", str(wav)]
         ms = int(start * 1000)
         filters.append(f"[{k + 1}:a]aresample=48000,adelay={ms}|{ms}[a{k}]")
     mix = "".join(f"[a{k}]" for k in range(len(clips)))
-    filters.append(f"{mix}amix=inputs={len(clips)}:normalize=0,loudnorm=I=-16:TP=-1.5[aud]")
+    filters.append(f"{mix}amix=inputs={len(clips)}:normalize=0,highpass=f=70,acompressor=threshold=-20dB:ratio=2.2:attack=20:release=250,loudnorm=I=-16:TP=-1.5[aud]")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(silent), *inputs,
                     "-filter_complex", ";".join(filters), "-map", "0:v", "-map", "[aud]",
                     "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", str(out)], check=True)
@@ -169,7 +209,8 @@ def _sarvam_key() -> str | None:
 
 def _sarvam(text: str, lang: str, speaker: str, out: Path) -> None:
     body = json.dumps({"text": text, "language_code": lang, "speaker": speaker, "model": "bulbul:v4-flash",
-                       "speech_sample_rate": 48000, "enable_preprocessing": True}).encode()
+                       "speech_sample_rate": 48000, "enable_preprocessing": True,
+                       "pace": float(os.environ.get("NARRATION_PACE", "0.95"))}).encode()
     req = urllib.request.Request(SARVAM_URL, data=body, method="POST", headers={
         "Content-Type": "application/json", "api-subscription-key": _sarvam_key() or ""})
     with urllib.request.urlopen(req, timeout=60) as r:
@@ -225,7 +266,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="http://127.0.0.1:8036")
     ap.add_argument("--size", default="1600x900")
-    ap.add_argument("--seconds", type=float, default=76)
+    ap.add_argument("--seconds", type=float, default=92)
+    ap.add_argument("--narrate-only", action="store_true",
+                    help="reuse the last screen recording (media/.take) and only redo the voice")
     ap.add_argument("--voice", default="sarvam:simran_en_narration",
                     help="sarvam:<persona> (needs SARVAM_API_KEY in the environment or .env) or a macOS `say` voice")
     ap.add_argument("--fps", type=int, default=30)
@@ -238,8 +281,18 @@ def main() -> None:
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     _json(f"{a.base}/api/reset", b"{}")
+    take = ROOT / "media" / ".take"                 # last screen recording, kept so the voice can be redone alone
+    if a.narrate_only:
+        meta = json.loads((take / "take.json").read_text())
+        frames, caps = [tuple(f) for f in meta["frames"]], [tuple(c) for c in meta["captions"]]
+    else:
+        shutil.rmtree(take, ignore_errors=True)
+        take.mkdir(parents=True)
+        frames, caps = asyncio.run(record(a.base, w, h, a.seconds, take, gpu=not a.swiftshader))
+        (take / "take.json").write_text(json.dumps({"frames": frames, "captions": caps}))
     with tempfile.TemporaryDirectory() as d:
-        frames, caps = asyncio.run(record(a.base, w, h, a.seconds, Path(d), gpu=not a.swiftshader))
+        for f in take.glob("f*.jpg"):
+            os.symlink(f, Path(d) / f.name)
         span = frames[-1][0] - frames[0][0] if frames else 0
         print(f"{len(frames)} frames over {span:.1f} s ({len(frames) / max(span, 1e-9):.1f} fps captured), {len(caps)} captions")
         build(frames, caps, Path(d), out, a.voice, a.fps)

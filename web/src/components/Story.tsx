@@ -93,9 +93,10 @@ export function useStory() {
     ];
     setOn(true);
     steps.forEach((x) => timers.current.push(window.setTimeout(async () => {
+      // fixed captions show at once; captions that read live numbers wait for their step to finish
+      if (typeof x.caption === "string") { setCaption(x.caption); speak(x.caption, voiceRef.current); }
       if (x.run) await x.run();
-      const c = typeof x.caption === "function" ? x.caption() : x.caption;
-      setCaption(c); speak(c, voiceRef.current);
+      if (typeof x.caption === "function") { const c = x.caption(); setCaption(c); speak(c, voiceRef.current); }
     }, x.at)));
   };
   useEffect(() => () => { timers.current.forEach(clearTimeout); speak("", false); }, []);
@@ -106,8 +107,8 @@ export function StoryCaption({ on, caption, stop, voice, setVoice }: { on: boole
   return (
     <AnimatePresence>
       {on && caption && (
-        <motion.div key={caption} role="status" aria-live="polite" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-          className="absolute left-1/2 -translate-x-1/2 top-[124px] z-[65] w-[min(860px,calc(var(--hud-w)-880px))] glass !bg-[#061422]/94 rounded-2xl px-6 py-3.5 text-[19px] font-display text-slate-50 leading-snug flex items-center gap-4">
+        <motion.div key={caption} role="status" aria-live="polite" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+          className="absolute left-1/2 -translate-x-1/2 bottom-[128px] z-[65] w-[min(940px,calc(var(--hud-w)-560px))] glass !bg-[#061422]/95 rounded-2xl px-6 py-3 text-[18px] font-display text-slate-50 leading-snug flex items-center gap-4 shadow-[0_10px_40px_-10px_rgba(0,0,0,.8)]">
           <Clapperboard size={18} className="text-aqua shrink-0" aria-hidden /><span className="flex-1">{caption}</span>
           <button aria-label={voice ? "Mute narration" : "Narrate"} onClick={() => { setVoice(!voice); if (voice) window.speechSynthesis?.cancel(); }} className="text-mist hover:text-white shrink-0">{voice ? <Volume2 size={16} /> : <VolumeX size={16} />}</button>
           <button aria-label="Stop the story (Esc)" onClick={stop} className="text-mist hover:text-white shrink-0"><X size={16} /></button>

@@ -43,7 +43,7 @@ export function Gauge({ value, status, frac, km }: { value: number; status: keyo
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {alerting ? <>
-          <div className={clsx("font-display font-bold leading-none text-white", km! >= 10 ? "text-[17px]" : "text-[21px]")}><Num v={km!} d={1} /><span className="text-[10px] font-sans font-medium text-aqua ml-0.5">{t("km")}</span></div>
+          <div className={clsx("font-display font-bold leading-none text-white", km! >= 10 ? "text-[15px]" : "text-[21px]")}><Num v={km!} d={1} /><span className="text-[10px] font-sans font-medium text-aqua ml-0.5">{t("km")}</span></div>
           <div className="text-[9.5px] text-aqua/90 mt-0.5 whitespace-nowrap">{t("to search")}</div>
         </> : <div className="text-[26px] font-display font-bold leading-none" style={{ color: col }}><Num v={value} /></div>}
       </div>

@@ -110,7 +110,7 @@ export default function App() {
               </button>
             )}
             <MapControls />
-            <Dock />
+            {!story.on && <Dock />}
             <Timeline />
             <Toast />
           </div>
