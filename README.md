@@ -24,7 +24,7 @@ Built for Indore · BUILD 2036 (TiE Global Summit 2026) · Frontier 06: The Rise
 | What | Where |
 |---|---|
 | ▶ **Demo video** (95 s, narrated) | https://youtu.be/-0dS_VIg2MM |
-| 🌐 **Live demo** | <!--LIVE_ROW--> |
+| 🌐 **Live demo** | Runs on any laptop in one command: [Run it locally](#run-it-locally) (hosted link coming) |
 | 📑 **Submission deck** (PDF) | [docs/JalKavach_BUILD2036_Submission.pdf](docs/JalKavach_BUILD2036_Submission.pdf) |
 | 📊 **Evaluation results**, every number with its interval | [results/RESULTS.md](results/RESULTS.md) |
 | 🧾 **Pre-registration** and change log, written before the first run | [harness/PREREGISTRATION.md](harness/PREREGISTRATION.md) |
