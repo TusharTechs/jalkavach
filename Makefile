@@ -1,4 +1,4 @@
-.PHONY: setup test demo demo-check app web dashboard replay physics eval report clean
+.PHONY: setup test demo demo-check video app web dashboard replay physics eval report clean
 
 setup:            ## install pinned environment
 	uv sync --frozen
@@ -18,6 +18,9 @@ report:           ## tables and figures from the last eval
 
 demo-check:       ## pre-stage check: endpoints, story path, speech model, web build freshness
 	uv run python scripts/demo_check.py
+
+video:            ## record story mode to media/jalkavach_story.mp4 (needs `make app` running)
+	uv run python scripts/record_demo.py
 
 app:              ## JalKavach command centre at http://localhost:8036 (offline; uses committed web/dist)
 	uv run uvicorn app.server:app --host 127.0.0.1 --port 8036

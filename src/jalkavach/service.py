@@ -268,6 +268,9 @@ class Service:
                              "routing": {k: {"median": self.summary["routing"][k]["median_tests_to_top3"][0],
                                              "mean": round(self.summary["routing"][k]["mean_tests_to_top3"][0], 1)}
                                          for k in ("info_gain", "random")},
+                             # declared power extension on fresh seeds (PREREGISTRATION.md, 27 Nov)
+                             "routing_ext": json.loads((ROOT / "results/routing_extension.json").read_text())
+                             if (ROOT / "results/routing_extension.json").exists() else None,
                              "n_junctions": int(self.N),
                              "equity_detected": {k: v["detected_F"] for k, v in self.summary["equity"].items()},
                              "det_gain_vs_CC_monthly": self.summary["detection"]["monthly"]["detect_rate_diff_F_vs_CC"],

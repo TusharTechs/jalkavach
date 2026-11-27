@@ -43,7 +43,7 @@ export function Gauge({ value, status, frac, km }: { value: number; status: keyo
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {alerting ? <>
-          <div className="text-[21px] font-display font-bold leading-none text-white"><Num v={km!} d={1} /><span className="text-[10px] font-sans font-medium text-aqua ml-0.5">{t("km")}</span></div>
+          <div className={clsx("font-display font-bold leading-none text-white", km! >= 10 ? "text-[17px]" : "text-[21px]")}><Num v={km!} d={1} /><span className="text-[10px] font-sans font-medium text-aqua ml-0.5">{t("km")}</span></div>
           <div className="text-[9.5px] text-aqua/90 mt-0.5 whitespace-nowrap">{t("to search")}</div>
         </> : <div className="text-[26px] font-display font-bold leading-none" style={{ color: col }}><Num v={value} /></div>}
       </div>
@@ -258,7 +258,9 @@ export function BeliefPanel() {
                   <span className="w-3.5 h-3.5 rounded-full border-2 border-blue-400 shrink-0" />{L(x)}
                 </button>
               ))}
-              <div className="text-[11.5px] text-mist leading-snug">Chosen by expected information gain. In simulation this was no better than random taps (median {meta!.headline.routing.info_gain.median} vs {meta!.headline.routing.random.median} tests to reach the top 3); treat as a convenience, not a gain.</div>
+              <div className="text-[11.5px] text-mist leading-snug">Chosen by expected information gain. {(() => { const x = meta!.headline.routing_ext; return x
+                ? <>In a larger declared simulation run ({x.n_usable} events) they got the true junction into the top 3 more often than random taps ({pct(x.reached_top3.info_gain)} vs {pct(x.reached_top3.random)}; median {x.tests_median.info_gain} vs {x.tests_median.random} tests). The smaller pre-registered run showed no difference.</>
+                : <>In simulation this was no better than random taps (median {meta!.headline.routing.info_gain.median} vs {meta!.headline.routing.random.median} tests).</>; })()}</div>
             </div>
             {state.truth && (
               <div className="border-t border-white/5 pt-3">

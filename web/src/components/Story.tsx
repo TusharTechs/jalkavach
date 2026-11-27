@@ -63,7 +63,7 @@ export function useStory() {
           const x = st().state!;
           return `The alert opens the search: from ${x.total_km.toFixed(1)} km of pipe to ${x.search_km.toFixed(1)} km, ranked, every row marked unconfirmed. Not yet a location: a place to start testing.`;
         } },
-      { at: T + 14500, caption: "7 pm: a resident's Hindi voice note: “near the park”, but this ward has six parks, so nothing is pinned until the officer calls back and the resident says Park 4.",
+      { at: T + 14500, caption: "7 pm: a resident's Hindi voice note: “near the park”, but several parks match, so nothing is pinned until the officer calls back and the resident says Park 4.",
         run: async () => {
           const p = (await api.parse(STORY_COMPLAINT)).parsed;
           const o = p.options.find((x) => x.name === STORY_PLACE) ?? p.options[0];

@@ -28,3 +28,10 @@ data/cache/worlds_3.npz
 # web app: dependencies stay local; the built app (web/dist) is committed so `make app` needs no Node
 web/node_modules/
 web/.vite/
+
+# recorded demo fallback (large; regenerate with make video)
+media/
+
+# local secrets (API keys)
+.env
+.env.*

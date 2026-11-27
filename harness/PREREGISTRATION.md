@@ -87,6 +87,7 @@ Written **before** the first harness run (26 Nov 2026). It was committed in the 
   - **Plan, fixed now:** run `harness/route_extension.py` once on fresh seeds 300,000–300,399 (400 specs), policies info-gain and random, 2 routed tests/day for up to 10 days, unchanged engine and routing code. Primary measure: share reaching the top 3 within 10 days, paired difference with a 95% bootstrap CI; secondary: tests to top 3 (median, mean).
   - The result is reported in README and the app whatever it shows. The original ablation stays reported as it is.
   - A batch-aware variant was tried on development seeds only and did not beat plain info-gain (75% vs 82%); it is not used.
+  - **Result (run once, as declared):** 280 usable events. Reached the top 3 within 10 days: info-gain 66%, random 55%; paired difference +11 points [6–16]. Tests to top 3: median 8 vs. 14, mean 11.2 vs. 12.9. `results/routing_extension.json`.
 
 **Headline results on every demo ward used** (reported together so that no ward is selected for its numbers):
 

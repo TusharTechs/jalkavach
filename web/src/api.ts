@@ -20,7 +20,8 @@ export type Meta = {
   policy: { stages: Stage[]; chain: string[]; advisory_approver: string; notify_on_open: string[]; escalate_every_hours: number };
   headline: {
     lead_days: [number, number, number]; detected_F: number; detected_H: number; detected_CC: number; detected_C: number;
-    det_gain_vs_CC: [number, number, number]; det_gain_vs_CC_monthly: [number, number, number]; equity_detected: Record<string, number>; routing: Record<"info_gain" | "random", { median: number; mean: number }>; n_junctions: number; top3_F: number; top3_C: number; top3_CC: number;
+    det_gain_vs_CC: [number, number, number]; det_gain_vs_CC_monthly: [number, number, number]; equity_detected: Record<string, number>; routing: Record<"info_gain" | "random", { median: number; mean: number }>;
+    routing_ext: null | { n_usable: number; reached_top3: Record<"info_gain" | "random", number>; diff_reached: [number, number, number]; tests_median: Record<"info_gain" | "random", number> }; n_junctions: number; top3_F: number; top3_C: number; top3_CC: number;
     top3_F_uniform: number | null; coverage: number; coverage_uniform: number | null; n_main: number; n_scenarios: number;
   };
 };

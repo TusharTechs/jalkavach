@@ -20,6 +20,7 @@ JalKavach joins them into one ward-level alert. Each alert carries:
 - [Evaluation results](results/RESULTS.md)
 - [Pre-registration](harness/PREREGISTRATION.md)
 - [Escalation policy](configs/escalation.yaml)
+- [Pilot pack: champion, request letter, stage Q&A](docs/PILOT_PACK.md)
 
 ## How it works
 
@@ -61,7 +62,7 @@ The evaluation design was pre-registered before the first run: [`harness/PREREGI
 - **Detection timing.** It is driven by complaints. Fusion alarms no earlier than complaints alone or a simple complaint-count exceedance detector. Fusion's gains come in **how many** events are caught and **where** the problem is located, not in how early the alarm fires.
 - **Intermittent-supply prior vs. a 24×7-style prior.** +3.2 points of top-3 accuracy, with a CI of −0.9 to +7.4. **Not significant.** The informed prior beats a uniform one by only +3.7 [−1.4 to +8.3] points.
 - **Ward size.** On this 246-junction ward, top-3 localisation is 39%; on the smaller EPANET Net3 it is 68%. Bigger wards need more field tests.
-- **Information-gain field-test routing.** No better than random sampling here (median 6 vs. 6 tests; mean 8.9 vs. 9.4).
+- **Information-gain field-test routing: mixed evidence, both runs reported.** In the pre-registered ablation (76 usable events) it was no better than random (median 6 vs. 6 tests; mean 8.9 vs. 9.4). A larger run, declared in the change log before it ran (fresh seeds, 280 usable events, unchanged code), found it ahead: the true junction reached the top 3 within 10 days in 66% of events vs. 55% for random taps (+11 points, 95% CI 6–16; median 8 vs. 14 tests). `results/routing_extension.json`.
 - **Equity.** Where the exposed population reports less, fusion detects 84% of events, vs. 94% elsewhere.
 - **Geocoding precision matters.** With 250 m geocoding error, top-3 localisation falls to 20% (60% at 60 m). Ambiguous landmarks are therefore never auto-pinned: the officer chooses.
 - **Small exposures.** Ingress that reaches only a few dozen residents is rarely detectable from complaints.
@@ -105,6 +106,7 @@ All state is a pure function of (day, hour, recorded actions), so scrubbing the 
 - `←`/`→` change the day; `space` plays or pauses.
 - `1`–`6` switch views.
 - `S` stage mode (larger type), `H` Hindi, `R` reveal the simulated truth.
+- Fallback video: `make video` records story mode with narration to `media/jalkavach_story.mp4`.
 
 Deep links: `/?view=command&day=7&hour=18`, `&stage`, `&lang=hi`, `&reset`.
 

@@ -61,9 +61,19 @@ export function Intake() {
   const [rec, setRec] = useState<MediaRecorder | null>(null);
   const [delta, setDelta] = useState<{ label: string; a: number; b: number } | null>(null);
   const waveRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null); // the result (and the "which one?" picker) is scrolled into view
   const ws = useRef<WaveSurfer | null>(null);
 
   useEffect(() => { api.clips().then(setClips); }, []);
+  // deep link for walkthroughs and screenshots: /?view=intake&parse=<text> opens with that text understood
+  const deep = useRef(new URLSearchParams(window.location.search).get("parse"));
+  useEffect(() => {
+    const q = deep.current;
+    if (!q || !clips.length) return; // after the clip list loads (selecting a clip resets the result)
+    deep.current = null;
+    const id = window.setTimeout(() => api.parse(q).then((r) => { setParsed(r.parsed); setFree(q); setPhase("done"); }), 300);
+    return () => window.clearTimeout(id);
+  }, [clips]);
   useEffect(() => {
     let alive = true;
     const poll = async () => { try { const s = await api.asrStatus(); if (!alive) return; setAsrState(s); if (s.state === "warming") setTimeout(poll, 4000); } catch { /* server busy */ } };
@@ -172,7 +182,8 @@ export function Intake() {
                 </motion.div>
               )}
               {phase === "done" && parsed && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/8 bg-black/20 p-4 space-y-3">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/8 bg-black/20 p-4 space-y-3"
+                  onAnimationComplete={() => resultRef.current?.scrollIntoView({ behavior: SHOT ? "auto" : "smooth", block: "start" })} ref={resultRef}>
                   <div className="flex items-center justify-between"><div className="label">{t("Transcript")}</div>{asr && <div className="text-[10.5px] text-mist">{asr.source} · {asr.seconds.toFixed(1)} s</div>}</div>
                   <div className="font-hindi text-[18px] leading-relaxed text-white" style={{ letterSpacing: 0 }}><Typewriter text={parsed.text} /></div>
                   {english && <div className="text-[12.5px] text-mist">EN: {english}</div>}
@@ -602,7 +613,7 @@ export function Evidence() {
               <li>Fusion does not alarm <i>earlier</i> or catch <i>more</i> events than the complaints-only model ({pct(h.detected_F)} vs {pct(h.detected_C)}). The +{Math.round(100 * h.det_gain_vs_CC[0])} pts is the engine vs. a simple count alarm; fusion's own gain is <i>where</i>: {pct(h.top3_F)} vs {pct(h.top3_C)} top-3.</li>
               <li>Intermittent-supply prior vs. a 24×7 prior: not significant.</li>
               <li>Larger wards localise less well: {pct(h.top3_F)} top-3 here ({h.n_junctions} junctions), {res ? <> vs. {pct(res.net3.top3)} on the smaller Net3</> : null}.</li>
-              <li>Information-gain test routing ≈ random (median {h.routing.info_gain.median} vs {h.routing.random.median} tests).</li>
+              <li>Information-gain test routing ≈ random in the pre-registered run (median {h.routing.info_gain.median} vs {h.routing.random.median} tests){h.routing_ext ? <>; a larger run declared in advance found it ahead: {pct(h.routing_ext.reached_top3.info_gain)} vs {pct(h.routing_ext.reached_top3.random)} reach the top 3 (+{Math.round(100 * h.routing_ext.diff_reached[0])} pts, 95% CI {Math.round(100 * h.routing_ext.diff_reached[1])}–{Math.round(100 * h.routing_ext.diff_reached[2])})</> : null}.</li>
               <li>Lower detection where people report less.</li>
               <li>Everything here is simulated, not field data.</li>
             </ul>
