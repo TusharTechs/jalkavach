@@ -46,7 +46,7 @@ Pharmacy data is optional. Complaints alone detect 90% of events (fusion 90%); f
 It builds on that work (multi-signal warning; Bayesian source identification). What is new is the target: chronic ingress on intermittent Indian networks, a city-set escalation clock, Hindi intake, and an evaluation that reports what did not work.
 
 **"Do your suggested test taps help?"**
-Mixed, and we show both. On the pre-registered run (76 events) it was no better than random. A larger run declared in advance (280 events, fresh seeds, unchanged code) found it ahead: 66% vs 55% reach the top 3 (+11 points, CI 6–16), median 8 vs 14 tests.
+Mixed, and we show both. On the pre-registered run (76 events) it was no better than random. A larger run declared in advance (280 events, fresh seeds, unchanged code) found it ahead: 66% vs 55% reach the top 3 (+11 points, CI 6–16; mean 11.2 vs 12.9 tests). Pooled over both runs: 68% vs 59%, about +9. Random itself moved 75% → 55% between samples, so treat it as supportive, not definitive. Day 9's top two pipes are a tie (27% each): say "tie".
 
 **"Is the demo cherry-picked?"**
 The scenario's detection delay matches the median. It is a successful localisation case, which happens in 39% of events; we say so on screen.

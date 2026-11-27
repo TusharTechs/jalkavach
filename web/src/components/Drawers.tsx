@@ -20,7 +20,8 @@ export function Shell({ title, icon, children, wide = false }: { title: string; 
   const t = useT();
   return (
     <motion.div role="dialog" aria-label={t(title)} initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 60, opacity: 0 }} transition={{ type: "spring", stiffness: 220, damping: 28 }}
-      className={clsx("absolute right-4 top-[124px] bottom-[190px] z-40 glass rounded-3xl flex flex-col overflow-hidden", wide ? "left-[280px] !bg-[#061422]/95" : "w-[640px] !bg-[#061422]/92")}>
+      style={{ bottom: "var(--drawer-bottom, 190px)", transition: "bottom .35s ease" }}
+      className={clsx("absolute right-4 top-[124px] z-40 glass rounded-3xl flex flex-col overflow-hidden", wide ? "left-[280px] !bg-[#061422]/95" : "w-[640px] !bg-[#061422]/92")}>
       <div className="flex items-center gap-3 px-6 pt-5 pb-3 border-b border-white/5">
         <div className="w-9 h-9 rounded-xl grid place-items-center bg-cyan/15 text-aqua">{icon}</div>
         <div className="font-display text-xl font-semibold">{t(title)}</div>
@@ -183,7 +184,7 @@ export function Intake() {
               )}
               {phase === "done" && parsed && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/8 bg-black/20 p-4 space-y-3"
-                  onAnimationComplete={() => resultRef.current?.scrollIntoView({ behavior: SHOT ? "auto" : "smooth", block: "start" })} ref={resultRef}>
+                  onAnimationComplete={() => resultRef.current?.scrollIntoView({ behavior: SHOT ? "auto" : "smooth", block: "nearest" })} ref={resultRef}>
                   <div className="flex items-center justify-between"><div className="label">{t("Transcript")}</div>{asr && <div className="text-[10.5px] text-mist">{asr.source} · {asr.seconds.toFixed(1)} s</div>}</div>
                   <div className="font-hindi text-[18px] leading-relaxed text-white" style={{ letterSpacing: 0 }}><Typewriter text={parsed.text} /></div>
                   {english && <div className="text-[12.5px] text-mist">EN: {english}</div>}
@@ -348,7 +349,7 @@ export function Escalation() {
   const roles = [...new Set([...stages.map((s) => s.owner), meta.policy.advisory_approver])];
   const act = async (a: string) => {
     const late = !!esc && esc.overdue_h > 0;
-    if (late && !why.trim() && (a === "acknowledge" || a === "samples")) { notify("SLA missed: add a reason for the delay first", "bad"); return; }
+    if (late && !why.trim() && ["acknowledge", "samples", "confirm", "clear"].includes(a)) { notify("SLA missed: add a reason for the delay first", "bad"); return; }
     const r = await api.action(a, roles[role], day, hour, late ? why : "");
     if (!r.ok) notify(r.error ?? "not allowed", "bad"); else { notify(`Recorded in the audit trail: ${a.replace(/_/g, " ")}`, "good"); setWhy(""); await refresh(); }
   };
@@ -564,9 +565,9 @@ export function Evidence() {
     <Shell title="Evidence · held-out simulation, pre-registered" icon={<Sparkles size={18} />} wide>
       <div className="grid grid-cols-4 gap-3">
         {[
-          [`+${Math.round(100 * h.det_gain_vs_CC[0])} pts`, `more events caught within 21 days than a simple complaint-count alarm, ≤1 false alarm per quarter (95% CI +${Math.round(100 * h.det_gain_vs_CC[1])} to +${Math.round(100 * h.det_gain_vs_CC[2])})`],
-          [pct(h.top3_F), `true junction in the top 3, three days after the alert (complaints only: ${pct(h.top3_C)}; centroid: ${pct(h.top3_CC)}; ${h.top3_F_uniform !== null ? pct(h.top3_F_uniform) : "–"} with uniformly placed ingress)`],
-          [`${h.lead_days[0]} days`, `median lead over a hospital-only baseline (95% CI ${h.lead_days[1]}–${h.lead_days[2]}; its misses counted at day 21)`],
+          [pct(h.top3_F), `true junction in the top 3, three days after the alert: what joining the signals adds (complaints alone: ${pct(h.top3_C)}; complaint centroid: ${pct(h.top3_CC)})`],
+          [`${h.lead_days[0]} days`, `median lead over a hospital-only baseline (95% CI ${h.lead_days[1]}–${h.lead_days[2]}; its misses counted at day 21${h.lead_both ? `; ${h.lead_both[0]} days among the ${h.n_both} events both catch` : ""})`],
+          [`+${Math.round(100 * h.det_gain_vs_CC[0])} pts`, `events caught by the engine vs. a simple complaint-count alarm, ≤1 false alarm per quarter (95% CI +${Math.round(100 * h.det_gain_vs_CC[1])} to +${Math.round(100 * h.det_gain_vs_CC[2])}); complaints alone already do this`],
           [pct(h.coverage), `of 90% credible sets contained the true junction: conservative (${h.coverage_uniform !== null ? pct(h.coverage_uniform) : "–"} when ingress ignores pipe risk)`],
         ].map(([v, l], i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="rounded-2xl bg-black/20 border border-white/5 p-4">
@@ -605,6 +606,7 @@ export function Evidence() {
               <li>10 perturbed pipe networks; a complaint process the engine does not assume</li>
               <li>True ingress drawn from a different risk model than the engine's prior</li>
               <li>Baselines: hospital-admission and complaint-count alarms, complaint centroid</li>
+              {h.routing_ext && <li>Suggested test taps, larger run declared in advance: {pct(h.routing_ext.reached_top3.info_gain)} vs {pct(h.routing_ext.reached_top3.random)} for random taps reach the top 3 (+{Math.round(100 * h.routing_ext.diff_reached[0])} pts, CI {Math.round(100 * h.routing_ext.diff_reached[1])}–{Math.round(100 * h.routing_ext.diff_reached[2])}); the smaller pre-registered run showed no difference</li>}
             </ul>
           </div>
           <div className="rounded-2xl border border-amber/30 bg-amber/5 p-4">

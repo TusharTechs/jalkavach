@@ -27,12 +27,13 @@ LABEL = {"F": "Fusion (JalKavach)", "C": "Complaints only", "T": "Field tests on
 RNG = np.random.default_rng(7)
 
 
-def boot_ci(x, stat=np.median, n=2000):
+def boot_ci(x, stat=np.median, n=2000, rng=None):
     x = np.asarray(x, dtype=float)
     x = x[~np.isnan(x)]
     if len(x) == 0:
         return (np.nan, np.nan, np.nan)
-    bs = [stat(RNG.choice(x, len(x))) for _ in range(n)]
+    r = RNG if rng is None else rng   # a separate rng keeps later additions from shifting published CIs
+    bs = [stat(r.choice(x, len(x))) for _ in range(n)]
     return (float(stat(x)), float(np.percentile(bs, 2.5)), float(np.percentile(bs, 97.5)))
 
 
@@ -105,6 +106,10 @@ def analyse(tag: str) -> dict:
         lead = delay(main, b, "H") - delay(main, b, "F")
         det[b]["lead_F_vs_H"] = boot_ci(lead)
         det[b]["lead_F_vs_H_mean"] = boot_ci(lead, np.mean)
+        both = main[main[f"{b}:F"].notna() & main[f"{b}:H"].notna()]            # no censoring at day 21
+        det[b]["lead_F_vs_H_both"] = boot_ci((both[f"{b}:H"] - both[f"{b}:F"]).astype(float).to_numpy(),
+                                             rng=np.random.default_rng([11, len(both)]))
+        det[b]["n_both"] = int(len(both))
         det[b]["lead_F_vs_CC"] = boot_ci(delay(main, b, "CC") - delay(main, b, "F"))
         singles = {m: np.median(delay(main, b, m)) for m in ("C", "T", "S") if m in methods}
         best = min(singles, key=singles.get)
@@ -287,7 +292,7 @@ def markdown(summaries: list[dict]) -> str:
             L += [f"### Detection at {budget}", "", "| Method | Median days from onset to alarm | Detected within 21 days |", "|---|---|---|"]
             for m in [k for k in LABEL if k in d]:
                 L.append(f"| {LABEL[m]} | {fmt(d[m]['median_delay'])} | {fmt(d[m]['detected'], pct=True)} |")
-            L += ["", f"- **Lead of fusion over the hospital-only baseline (median, paired):** {fmt(d['lead_F_vs_H'])} days. Mean: {fmt(d['lead_F_vs_H_mean'])}. Events the hospital baseline never caught within 21 days: {100 * d['censored_H']:.0f}%; fusion: {100 * d['censored_F']:.0f}% (counted as day 21).",
+            L += ["", f"- **Lead of fusion over the hospital-only baseline (median, paired):** {fmt(d['lead_F_vs_H'])} days. Mean: {fmt(d['lead_F_vs_H_mean'])}. Among the {d['n_both']} events both methods catch (no censoring): {fmt(d['lead_F_vs_H_both'])} days. Events the hospital baseline never caught within 21 days: {100 * d['censored_H']:.0f}%; fusion: {100 * d['censored_F']:.0f}% (counted as day 21).",
                   f"- **Lead over complaint-count exceedance:** {fmt(d['lead_F_vs_CC'])} days. Detection-rate difference (fusion minus complaint-count exceedance, paired): {fmt(d['detect_rate_diff_F_vs_CC'], pct=True)}.",
                   f"- **Fusion vs. the best single signal ({LABEL[d['best_single']]}):** {fmt(d['gain_F_vs_best_single'])} days earlier (median, paired).", ""]
         for setname, title in (("main", "true location from the physical risk model"), ("uniform_truth", "true location uniform")):

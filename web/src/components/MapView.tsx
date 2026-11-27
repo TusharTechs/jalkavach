@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { HUD_MIN_H, HUD_MIN_W } from "../fit";
 import DeckGL from "@deck.gl/react";
 import { AmbientLight, DirectionalLight, FlyToInterpolator, LightingEffect, WebMercatorViewport, type MapViewState } from "@deck.gl/core";
 import { ColumnLayer, PathLayer, PolygonLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
@@ -300,7 +301,9 @@ export default function MapView() {
         getTooltip={tooltip}
         useDevicePixels={1.5}
       />
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+      {/* hard clip under the top bar (124 px on the HUD canvas), independent of the panel read-back timing */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden
+        style={{ clipPath: `inset(${Math.ceil(124 * Math.min(1, window.innerWidth / HUD_MIN_W, window.innerHeight / HUD_MIN_H))}px 0 0 0)` }}>
         {labels.map((l, i) => (
           <div key={i} className={l.kind === "tank" ? "absolute text-[12.5px] font-semibold text-[#A5F3FC] whitespace-nowrap" : "absolute text-[11.5px] text-[#C4B5FD]/90 whitespace-nowrap"}
             style={{ left: l.x, top: l.y, transform: "translate(-50%, calc(-100% - 8px))", textShadow: "0 1px 3px #02070d, 0 0 8px #02070d", fontFamily: lang === "hi" ? "var(--font-hindi)" : undefined }}>
@@ -315,7 +318,7 @@ export default function MapView() {
             <div className="glass !bg-[#061422]/85 rounded-xl pr-3 py-1.5 flex items-stretch gap-2.5 shadow-[0_8px_30px_-6px_rgba(255,107,107,.45)] whitespace-nowrap">
               <span className="w-1 rounded-full bg-coral ml-1.5" />
               <div className="leading-tight">
-                <div className="text-[13px] font-display font-semibold text-white">{lang === "hi" ? `${state.credible90.length} में #1` : `#1 of ${state.credible90.length}`} · {(100 * top1.p).toFixed(0)}%</div>
+                <div className="text-[13px] font-display font-semibold text-white">{lang === "hi" ? `#1 (${state.credible90.length} में से)` : `#1 of ${state.credible90.length}`} · {(100 * top1.p).toFixed(0)}%</div>
                 <div className="text-[11px] text-coral/90 font-medium">{t_("unconfirmed")} · {L(top1).split(" · ")[0]}</div>
               </div>
             </div>

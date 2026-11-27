@@ -140,3 +140,16 @@ def test_advisory_groups_areas_by_landmark():
     hi = _group_areas(["गली 59 · पार्क 2 के पास", "गली 143 · पार्क 4 से 40 मी दक्षिण-पूर्व"], hi=True)
     assert hi == "पार्क 2 के पास गली 59; पार्क 4 के पास गली 143"
     assert "के पास के पास" not in hi and "near at" not in en
+
+
+def test_overdue_action_needs_a_reason_on_the_server(svc):
+    svc.reset()
+    A = svc.replay["alarm_day"]
+    owner = "AE"
+    late = svc.alert_action("acknowledge", owner, A + 2, 19)          # SLA is 24 h from A 18:00
+    assert not late["ok"] and "reason" in late["error"]
+    ok = svc.alert_action("acknowledge", owner, A + 2, 19, note="pump failure in the zone")
+    assert ok["ok"]
+    rows = svc.audit(A + 2, 20)["rows"]
+    assert any(r["payload"].get("reason_for_delay") == "pump failure in the zone" for r in rows)
+    svc.reset()

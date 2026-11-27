@@ -14,6 +14,7 @@ import { pct } from "../fmt";
 const STATUS = {
   ALERT: { c: "#ff6b6b", bg: "rgba(255,107,107,.14)" },
   NORMAL: { c: "#34d399", bg: "rgba(52,211,153,.12)" },
+  CONFIRMED: { c: "#f5b544", bg: "rgba(245,181,68,.14)" },   // amber = acting on it (matches the drawer pill)
 };
 
 export function Num({ v, d = 0, suffix = "" }: { v: number; d?: number; suffix?: string }) {
@@ -82,10 +83,10 @@ export function TopBar() {
   const { state, meta, reset, notify, lang, toggleLang, toggleStage, stage } = useStore();
   const t = useT();
   if (!state || !meta) return null;
-  const st = STATUS[state.status];
   const esc = state.escalation;
   const alerting = state.status === "ALERT";
   const chip = alerting && esc?.status === "confirmed" ? "CONFIRMED" : state.status;
+  const st = STATUS[chip];
   return (
     <motion.div initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
       className="absolute top-4 left-4 right-4 z-30 flex items-stretch gap-3 pointer-events-none">
@@ -104,7 +105,8 @@ export function TopBar() {
             <span className={lang === "hi" ? "font-hindi" : ""}>{t(chip)}</span>
           </motion.div>
           <div className="text-[12.5px] text-mist mt-1 whitespace-nowrap">
-            {t("Alert index")} <b className="num text-slate-100">{state.alert_index.toFixed(0)}</b> · {t("city threshold 50")}
+            {chip === "CONFIRMED" ? t("Contamination confirmed · source pipe not yet found")
+              : <>{t("Alert index")} <b className="num text-slate-100">{state.alert_index.toFixed(0)}</b> · {t("city threshold 50")}</>}
           </div>
         </div>
       </div>
@@ -199,6 +201,7 @@ export function BeliefPanel() {
   const name: Record<string, string> = { complaints: "Complaints", syndromic: "Pharmacy", tests: "Field tests" };
   const N = state.credible90.length;
   const top3 = state.top.slice(0, 3).reduce((a, x) => a + x.p, 0);
+  const spread = state.top.length > 0 && state.top[0].p < 0.1;
   return (
     <motion.div initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 40, opacity: 0 }} transition={{ delay: 0.2 }}
       className={clsx("absolute right-4 top-[124px] z-20 glass rounded-2xl p-4 space-y-4 overflow-auto scrollbar-thin", stage ? "w-[400px] max-h-[calc(var(--hud-h)-124px-150px)]" : "w-[350px] max-h-[calc(var(--hud-h)-124px-200px)]")}>
@@ -215,6 +218,8 @@ export function BeliefPanel() {
             <div className="text-[12.5px] text-slate-200 mt-2 flex items-center gap-1.5"><Users size={13} className="text-amber" aria-hidden />≈ <b className="num">{state.exposed_people.toLocaleString("en-IN")}</b> {t("people could be supplied through these pipes")}</div>
           </div>
           <div className="flex items-center gap-2"><Sparkles size={15} className="text-coral" aria-hidden /><span className="label">{t("Probable ingress · unconfirmed")}</span></div>
+          {/* early in an alert the probability is spread thin: say so, instead of four small percentages under a red ALERT */}
+          {spread && <div className="text-[12px] text-amber/90 leading-snug -mt-1">{t("Spread across the search area: no single pipe stands out yet. Start testing at these taps; each test sharpens the ranking.")}</div>}
           <AnimatePresence mode="popLayout">
             {state.top.slice(0, stage ? 3 : 4).map((x, k) => (
               <motion.button layout key={x.node} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
@@ -229,7 +234,7 @@ export function BeliefPanel() {
                         initial={{ width: 0 }} animate={{ width: `${(100 * x.p) / pmax}%` }} transition={{ duration: 0.8 }} />
                     </div>
                   </div>
-                  <div className="font-display text-lg w-12 text-right"><Num v={100 * x.p} suffix="%" /></div>
+                  <div className={clsx("font-display w-12 text-right", spread ? "text-[13px] text-mist" : "text-lg")}><Num v={100 * x.p} suffix="%" /></div>
                 </div>
               </motion.button>
             ))}

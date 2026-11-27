@@ -262,6 +262,7 @@ class Service:
                            "notify_on_open": eng.policy.get("notify_on_open", []),
                            "escalate_every_hours": eng.policy["escalate_every_hours"]},
                 "headline": {"lead_days": q["lead_F_vs_H"], "detected_F": q["F"]["detected"][0],
+                             "lead_both": q.get("lead_F_vs_H_both"), "n_both": q.get("n_both"),
                              "detected_H": q["H"]["detected"][0], "detected_CC": q["CC"]["detected"][0],
                              "detected_C": q["C"]["detected"][0],
                              "det_gain_vs_CC": q["detect_rate_diff_F_vs_CC"],
@@ -489,7 +490,7 @@ class Service:
     def alert_action(self, action: str, actor: str, day: int, hour: int, note: str = "") -> dict:
         day, hour = self._clip_time(day, hour)
         now = self.now(day, hour)
-        alert, _, _ = self._rebuild(now)
+        alert, eng, _ = self._rebuild(now)
         if alert is None:
             return {"ok": False, "error": "no alert at this time"}
         allowed = {"acknowledge": alert.status == "open" and alert.stage_index == 0,
@@ -500,6 +501,8 @@ class Service:
                    "approve_advisory": alert.status == "confirmed"}
         if not allowed.get(action):
             return {"ok": False, "error": f"'{action}' is not available at this stage"}
+        if action in ("acknowledge", "samples", "confirm", "clear") and now > eng.due(alert) and not note.strip():
+            return {"ok": False, "error": "SLA missed: a reason for the delay is required (it is recorded in the audit trail)"}
         self.record("stage", day, hour, action=action, actor=actor, note=note.strip()[:200])
         return {"ok": True}
 

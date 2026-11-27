@@ -49,6 +49,9 @@ def fetch_pois(cfg: dict) -> list[dict]:
         if kind is None:
             continue
         c = r.geometry.centroid
+        # OSM often maps one place twice (a node and an area): keep one per kind within 30 m
+        if any(o["kind"] == kind[0] and abs(o["lat"] - c.y) * 111_000 < 30 and abs(o["lon"] - c.x) * 102_000 < 30 for o in out):
+            continue
         counts[kind[0]] += 1
         out.append({"kind": kind[0], "name_hi": kind[1], "lat": c.y, "lon": c.x})
     # generic, de-duplicated display names: "Park 1", "Medical store A"

@@ -23,7 +23,7 @@ Scenarios: 720 event, 400 no-event.
 | Fusion, 5 psi prior | 2.0 [2.0–3.0] | 90% [86–93] |
 | Fusion, 15 psi prior | 2.0 [2.0–3.0] | 90% [87–94] |
 
-- **Lead of fusion over the hospital-only baseline (median, paired):** 7.0 [6.0–8.0] days. Mean: 6.8 [6.0–7.5]. Events the hospital baseline never caught within 21 days: 56%; fusion: 10% (counted as day 21).
+- **Lead of fusion over the hospital-only baseline (median, paired):** 7.0 [6.0–8.0] days. Mean: 6.8 [6.0–7.5]. Among the 98 events both methods catch (no censoring): 4.0 [3.0–5.0] days. Events the hospital baseline never caught within 21 days: 56%; fusion: 10% (counted as day 21).
 - **Lead over complaint-count exceedance:** 0.0 [0.0–0.0] days. Detection-rate difference (fusion minus complaint-count exceedance, paired): 22% [16–28].
 - **Fusion vs. the best single signal (Complaints only):** 0.0 [0.0–0.0] days earlier (median, paired).
 
@@ -43,7 +43,7 @@ Scenarios: 720 event, 400 no-event.
 | Fusion, 5 psi prior | 1.0 [1.0–2.0] | 94% [91–97] |
 | Fusion, 15 psi prior | 1.0 [1.0–2.0] | 94% [91–97] |
 
-- **Lead of fusion over the hospital-only baseline (median, paired):** 4.0 [3.0–5.0] days. Mean: 4.6 [3.9–5.4]. Events the hospital baseline never caught within 21 days: 24%; fusion: 6% (counted as day 21).
+- **Lead of fusion over the hospital-only baseline (median, paired):** 4.0 [3.0–5.0] days. Mean: 4.6 [3.9–5.4]. Among the 175 events both methods catch (no censoring): 3.0 [3.0–4.0] days. Events the hospital baseline never caught within 21 days: 24%; fusion: 6% (counted as day 21).
 - **Lead over complaint-count exceedance:** 0.0 [0.0–0.0] days. Detection-rate difference (fusion minus complaint-count exceedance, paired): 2% [-2–5].
 - **Fusion vs. the best single signal (Complaints only):** 0.0 [0.0–0.0] days earlier (median, paired).
 
@@ -128,7 +128,7 @@ Scenarios: 150 event, 250 no-event.
 | Complaint-count exceedance (baseline) | 1.0 [1.0–2.0] | 86% [80–91] |
 | Pharmacy exceedance (baseline) | 5.0 [4.0–6.5] | 67% [59–74] |
 
-- **Lead of fusion over the hospital-only baseline (median, paired):** 5.0 [4.0–6.0] days. Mean: 6.3 [5.5–7.1]. Events the hospital baseline never caught within 21 days: 39%; fusion: 10% (counted as day 21).
+- **Lead of fusion over the hospital-only baseline (median, paired):** 5.0 [4.0–6.0] days. Mean: 6.3 [5.5–7.1]. Among the 89 events both methods catch (no censoring): 4.0 [3.0–5.0] days. Events the hospital baseline never caught within 21 days: 39%; fusion: 10% (counted as day 21).
 - **Lead over complaint-count exceedance:** 0.0 [0.0–0.0] days. Detection-rate difference (fusion minus complaint-count exceedance, paired): 4% [-1–9].
 - **Fusion vs. the best single signal (Complaints only):** 0.0 [0.0–0.0] days earlier (median, paired).
 
@@ -144,7 +144,7 @@ Scenarios: 150 event, 250 no-event.
 | Complaint-count exceedance (baseline) | 1.0 [1.0–1.0] | 97% [95–99] |
 | Pharmacy exceedance (baseline) | 3.0 [3.0–4.0] | 89% [83–93] |
 
-- **Lead of fusion over the hospital-only baseline (median, paired):** 4.0 [3.0–4.0] days. Mean: 4.8 [4.0–5.6]. Events the hospital baseline never caught within 21 days: 15%; fusion: 4% (counted as day 21).
+- **Lead of fusion over the hospital-only baseline (median, paired):** 4.0 [3.0–4.0] days. Mean: 4.8 [4.0–5.6]. Among the 123 events both methods catch (no censoring): 4.0 [3.0–4.0] days. Events the hospital baseline never caught within 21 days: 15%; fusion: 4% (counted as day 21).
 - **Lead over complaint-count exceedance:** 0.0 [0.0–0.0] days. Detection-rate difference (fusion minus complaint-count exceedance, paired): -1% [-5–2].
 - **Fusion vs. the best single signal (Complaints only):** 0.0 [0.0–0.0] days earlier (median, paired).
 

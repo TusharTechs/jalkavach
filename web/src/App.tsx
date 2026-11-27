@@ -90,7 +90,9 @@ export default function App() {
       {hud && <AlertVignette />}
       {hud && (
         <div className="absolute left-0 top-0 pointer-events-none"
-          style={{ width: hudc.w, height: hudc.h, transform: `scale(${hudc.s})`, transformOrigin: "0 0", ["--hud-h" as string]: `${hudc.h}px`, ["--hud-w" as string]: `${hudc.w}px` } as React.CSSProperties}>
+          style={{ width: hudc.w, height: hudc.h, transform: `scale(${hudc.s})`, transformOrigin: "0 0", ["--hud-h" as string]: `${hudc.h}px`, ["--hud-w" as string]: `${hudc.w}px`,
+            // while the story plays its caption sits above the timeline; drawers end above the caption
+            ["--drawer-bottom" as string]: story.on ? "222px" : "190px" } as React.CSSProperties}>
           <div className="absolute inset-0 [&>*]:pointer-events-auto">
             <StoryCaption on={story.on} caption={story.caption} stop={story.stop} voice={story.voice} setVoice={story.setVoice} />
             <TopBar />
