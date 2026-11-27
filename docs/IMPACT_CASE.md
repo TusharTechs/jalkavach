@@ -43,18 +43,19 @@ All results below are at **≤1 false alarm per ward per quarter**. Brackets are
 
 | | JalKavach | Baseline |
 |---|---|---|
-| Median alarm lead over hospital admissions (its misses counted at day 21) | **5.0 [4.0–6.0] days** | — |
-| Events detected within 21 days | **85%** | 50% (hospital-only) |
-| Events detected, vs. simple complaint-count alarm | **+16 [11–21] points** | — |
-| True segment in top 3, 3 days after alert | **57%** | 13% (complaint centroid); 43% (complaints only) |
-| 90% credible sets that contain the truth (conservative) | 97% | — |
+| Median alarm lead over hospital admissions (its misses counted at day 21) | **7.0 [6.0–8.0] days** | — |
+| Events detected within 21 days | **90%** | 44% (hospital-only) |
+| Events detected, vs. simple complaint-count alarm | **+22 [16–28] points** (monthly budget: +2, not significant) | — |
+| True junction (of 246) in top 3, 3 days after alert | **39%** | 6% (complaint centroid); 26% (complaints only) |
+| 90% credible sets that contain the truth | 93% | — |
 | Robustness network (EPANET Net3): lead | 5.0 [4.0–6.0] days | — |
 
 **Limits we report ourselves:**
 
 - Fusion does not alarm *earlier* than complaints alone. Its gains are in *how many* events are caught and in *where* they are located.
-- The intermittent-supply prior does not beat a 24×7 prior significantly: +1.0 point, CI −3.4 to +5.4.
-- Detection is lower where people report less: 74% vs. 85–96%.
+- The intermittent-supply prior does not beat a 24×7 prior significantly: +3.2 points, CI −0.9 to +7.4.
+- Localisation is harder in bigger wards: 39% top-3 on 246 junctions vs. 68% on EPANET Net3.
+- Detection is lower where people report less: 84% vs. 94%.
 - Ingress reaching only a few dozen residents is rarely detectable from complaints.
 - All of these results are simulated. None is field data.
 
@@ -110,4 +111,4 @@ Tap-water safety becomes as visible to a city as its air quality index. The path
 ⁸ Onmanorama / Outlook, Jan 2026: 398 hospitalised.
 ⁹ An assumption range. An Odisha teaching-hospital study reports a median out-of-pocket cost of ₹6,385 per under-five diarrhoea admission; adult and ICU stays cost more.
 
-Verify every footnote against the primary source before it goes on a slide.
+Sources are press and audit reports as cited; where reports disagree, the range is given. Field figures (cost, deaths, hospitalisations) are not ours and are not used anywhere in the evaluation.

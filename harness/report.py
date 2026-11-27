@@ -336,7 +336,12 @@ def main():
     ap.add_argument("--tag", action="append")
     a = ap.parse_args()
     tags = a.tag or ["ward"]
-    sums = [analyse(t) for t in tags]
+    global RNG
+    sums = []
+    for t in tags:
+        # each topology gets its own bootstrap stream, so one table never shifts another's CIs
+        RNG = np.random.default_rng([7, sum(map(ord, t))])
+        sums.append(analyse(t))
     (RESULTS / "RESULTS.md").write_text(markdown(sums))
     print((RESULTS / "RESULTS.md").read_text())
 

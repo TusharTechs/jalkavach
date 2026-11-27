@@ -21,16 +21,16 @@ KINDS = {
     ("amenity", "hospital"): ("Hospital", "अस्पताल"),
     ("amenity", "clinic"): ("Clinic", "क्लिनिक"),
     ("amenity", "doctors"): ("Clinic", "क्लिनिक"),
-    ("amenity", "pharmacy"): ("Medical store", "मेडिकल"),
-    ("shop", "chemist"): ("Medical store", "मेडिकल"),
-    ("amenity", "toilets"): ("Public toilet", "सुलभ शौचालय"),
+    ("amenity", "pharmacy"): ("Medical store", "मेडिकल स्टोर"),
+    ("shop", "chemist"): ("Medical store", "मेडिकल स्टोर"),
+    ("amenity", "toilets"): ("Public toilet", "सार्वजनिक शौचालय"),
     ("leisure", "park"): ("Park", "पार्क"),
     ("leisure", "playground"): ("Playground", "खेल मैदान"),
     ("man_made", "water_tower"): ("Water tank", "पानी की टंकी"),
     ("man_made", "water_tank"): ("Water tank", "पानी की टंकी"),
 }
-WORSHIP = {"hindu": ("Mandir", "मंदिर"), "muslim": ("Masjid", "मस्जिद"), "sikh": ("Gurudwara", "गुरुद्वारा"),
-           "christian": ("Church", "चर्च"), "jain": ("Jain mandir", "जैन मंदिर")}
+# Places of worship are deliberately never used as landmarks: a contamination demo must not
+# place "sewage in the water" next to any community's shrine.
 
 
 def fetch_pois(cfg: dict) -> list[dict]:
@@ -46,8 +46,6 @@ def fetch_pois(cfg: dict) -> list[dict]:
             if k in r and r.get(k) == v:
                 kind = lab
                 break
-        if r.get("amenity") == "place_of_worship":
-            kind = WORSHIP.get(str(r.get("religion")), ("Place of worship", "पूजा स्थल"))
         if kind is None:
             continue
         c = r.geometry.centroid

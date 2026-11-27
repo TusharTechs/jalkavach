@@ -74,14 +74,18 @@ def test_demo_clips_geocode_to_their_landmarks(demo):
     gaz = Gazetteer.load(ward)
     clips = json.loads((ROOT / "data/demo/clips/clips.json").read_text())
     trans = json.loads((ROOT / "data/cache/transcripts.json").read_text())
-    expect = {"clip1": "Park", "clip2": "Water tank", "clip3": "Park", "clip4": "Water tank", "clip5": None}
+    # clip1 names "the park" in a ward with several parks: it must be flagged, never silently pinned
+    expect = {"clip1": "Park*", "clip2": "Water tank", "clip3": "Clinic", "clip4": "Water tank", "clip5": None}
     for c in clips:
         for text in [c["text"]] + [v["text"] for v in trans.values() if v["file"] == f"{c['id']}.wav"]:
             r = process_text(text, gaz)
-            if expect[c["id"]] is None:
+            want = expect[c["id"]]
+            if want is None:
                 assert not r.water_quality, (c["id"], text)               # "pressure is low" is rejected
+            elif want.endswith("*"):
+                assert r.place_match.startswith(want[:-1]) and r.candidates > 1 and len(r.options) > 1, (c["id"], text)
             else:
-                assert r.place_match == expect[c["id"]], (c["id"], text, r.place_match)
+                assert r.place_match == want and r.candidates == 1, (c["id"], text, r.place_match)
     amb = process_text("स्कूल के पास पानी गंदा है", gaz)                  # 7 schools: flagged ambiguous
     assert amb.candidates > 1 and amb.radius_m >= 250
     assert process_text("रेलवे स्टेशन के पास पानी गंदा है", gaz).node is None   # unknown place: no geocode

@@ -1,7 +1,7 @@
 [
- {"id": "clip1", "text": "भैया, पार्क के पास नल में पीला पानी आ रहा है, बदबू भी है।", "en": "Bhaiya, yellow water is coming from the tap near the park, and it smells too."},
+ {"id": "clip1", "text": "भिया, पार्क के पास नल में पीला पानी आ रहा है, बदबू भी है।", "en": "Bhiya, yellow water is coming from the tap near the park, and it smells too. (This ward has six parks: the officer must ask which one.)"},
  {"id": "clip2", "text": "पानी की टंकी के पास वाली गली में पानी गंदा आ रहा है, बच्चों को दस्त हो रहे हैं।", "en": "In the lane near the water tank the water is dirty, and the children have diarrhoea."},
- {"id": "clip3", "text": "पार्क के सामने वाले घरों में कल से पानी मटमैला है, घर में दो लोगों को उल्टी हुई।", "en": "In the houses opposite the park the water has been muddy since yesterday; two people at home vomited."},
+ {"id": "clip3", "text": "क्लिनिक के सामने वाले घरों में कल से पानी मटमैला है, घर में दो लोगों को उल्टी हुई।", "en": "In the houses opposite the clinic the water has been muddy since yesterday; two people at home vomited."},
  {"id": "clip4", "text": "टंकी के पीछे पानी में झाग और बदबू आ रही है।", "en": "Behind the tank there is foam in the water and a bad smell."},
  {"id": "clip5", "text": "पानी ठीक है, बस प्रेशर कम है।", "en": "The water is fine, the pressure is just low. (Not a quality complaint: should be rejected.)"}
 ]

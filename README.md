@@ -25,7 +25,7 @@ JalKavach joins them into one ward-level alert. Each alert carries:
 
 | Layer | What it does | Data provenance |
 |---|---|---|
-| Network twin | The demo ward is "Ward 00 · Demo Nagar", a neutral Indore locality (Scheme No. 78 area). It builds the street graph from OpenStreetMap, then a pipe network along those streets, and runs EPANET 2.2 (via WNTR) with **pressure-dependent demand** and **intermittent supply windows**. | Streets: **real** (OSM). Elevation: **real** (Copernicus DEM via Open-Meteo). Pipes, sewers, ages: **synthetic**, seeded, constrained to the streets. Landmarks carry **generic labels only** ("Park", "Medical store B"); no business names. |
+| Network twin | The demo ward is "Ward 00 · Demo Nagar": real streets from Nipania (Tulsi Nagar area), a post-2000 residential colony in east Indore not linked to any reported event. It builds the street graph from OpenStreetMap, then a pipe network along those streets, and runs EPANET 2.2 (via WNTR) with **pressure-dependent demand** and **intermittent supply windows**. | Streets: **real** (OSM). Elevation: **real** (Copernicus DEM via Open-Meteo). Pipes, sewers, ages: **synthetic**, seeded, constrained to the streets. Landmarks carry **generic labels only** ("Park", "Medical store B"); no business names, and places of worship are never used as landmarks. |
 | Exposure prior | Scores each location by pipe age, sewer alongside, and *pressure-deficit hours*. The deficit is an exposure feature informed by Kumpel & Nelson's intermittent-supply field work, swept over 5/10/15 psi. | Derived |
 | Reachability | Runs one EPANET source-trace simulation per candidate ingress location, giving the share of each node's consumed water that passed through it. | Derived |
 | Bayesian engine | Computes a joint posterior over *(location × onset day × intensity)* plus an explicit **no-event** hypothesis. Complaints and pharmacy counts use negative-binomial likelihoods with delay and geocoding kernels. Field tests are kit-agnostic: chlorine (read instantly) or H2S (read the next day). Low chlorine at the network's tail ends is treated as normal and modelled, never assumed to mean contamination. | — |
@@ -41,20 +41,21 @@ The evaluation design was pre-registered before the first run: [`harness/PREREGI
 
 | Question (demo ward, ≤1 false alarm per ward per quarter) | Result |
 |---|---|
-| Alarm lead over a hospital-admissions-only baseline (median, paired; its misses counted at day 21) | **5.0 [4.0–6.0] days** |
-| Events detected within 21 days: fusion vs. hospital baseline | **85%** vs. 50% |
-| Events detected: fusion minus complaint-count exceedance (paired) | **+16 [11–21] points** |
-| True segment in the top 3 three days after the alarm: fusion vs. complaint-centroid baseline | **57%** vs. 13% |
-| Fusion minus complaints-only, same metric (paired) | **+14 [8–21] points** |
-| Coverage of the 90% credible set (conservative) | 97% [94–99] |
-| Robustness topology (EPANET Net3): lead over the hospital baseline | 5.0 [4.0–6.0] days |
+| Alarm lead over a hospital-admissions-only baseline (median, paired; its misses counted at day 21) | **7.0 [6.0–8.0] days** |
+| Events detected within 21 days: fusion vs. hospital baseline | **90%** vs. 44% |
+| Events detected: fusion minus complaint-count exceedance (paired) | **+22 [16–28] points** (at ≤1 false alarm per *month*: +2 [−2 to +5], not significant) |
+| True junction (of 246) in the top 3 three days after the alarm: fusion vs. complaint-centroid baseline | **39%** vs. 6% |
+| Fusion minus complaints-only, same metric (paired) | **+13 [6–19] points** |
+| Coverage of the 90% credible set | 93% [89–96] |
+| Robustness topology (EPANET Net3): lead over the hospital baseline; top-3 | 5.0 [4.0–6.0] days; 68% |
 
 **What did not work as well, reported as measured:**
 - **Detection timing.** It is driven by complaints. Fusion alarms no earlier than complaints alone or a simple complaint-count exceedance detector. Fusion's gains come in **how many** events are caught and **where** the problem is located, not in how early the alarm fires.
-- **Intermittent-supply prior vs. a 24×7-style prior.** +1.0 point of top-3 accuracy, with a CI of −3.4 to +5.4. **Not significant.** The informed prior beats a uniform one by only +3.4 [−2.5 to +9.3] points, and costs −6.7 [−14.3 to 0.0] points when ingress is unrelated to those risk drivers.
-- **Information-gain field-test routing.** It needed fewer tests than random sampling (median 6 vs. 10; mean 10.0 vs. 12.3), but the CIs overlap.
-- **Equity.** Where the exposed population reports less, fusion detects 74% of events, vs. 85–96% elsewhere.
-- **Geocoding precision matters.** With 250 m geocoding error, top-3 localisation falls to 29%.
+- **Intermittent-supply prior vs. a 24×7-style prior.** +3.2 points of top-3 accuracy, with a CI of −0.9 to +7.4. **Not significant.** The informed prior beats a uniform one by only +3.7 [−1.4 to +8.3] points.
+- **Ward size.** On this 246-junction ward, top-3 localisation is 39%; on the smaller EPANET Net3 it is 68%. Bigger wards need more field tests.
+- **Information-gain field-test routing.** No better than random sampling here (median 6 vs. 6 tests; mean 8.9 vs. 9.4).
+- **Equity.** Where the exposed population reports less, fusion detects 84% of events, vs. 94% elsewhere.
+- **Geocoding precision matters.** With 250 m geocoding error, top-3 localisation falls to 20% (60% at 60 m). Ambiguous landmarks are therefore never auto-pinned: the officer chooses.
 - **Small exposures.** Ingress that reaches only a few dozen residents is rarely detectable from complaints.
 
 Reproduce: `make eval` (about 3 minutes on 8 cores), then `make report`.
@@ -78,9 +79,9 @@ make web         # rebuild the web front end (Node 22 + pnpm)
   - pipes coloured by probability
   - simulated water flow during supply hours only
   - a low-pressure exposure layer when supply is off
-  - the predicted plume if the #1 segment is the source
+  - the predicted plume if the #1 junction is the source
   - absolute probability columns
-- **Alert:** calibrated to ≤1 false alarm per ward per quarter. Playback pauses when it opens, the camera flies to the likely pipes, and a "search area" metric shows how much pipe is left to dig.
+- **Alert:** calibrated to ≤1 false alarm per ward per quarter. Playback pauses when it opens, the camera flies to the likely pipes, and a "search area" metric shows how much pipe is left to test first (results are unconfirmed until field tests).
 - **Intake:**
   - Hindi voice notes transcribed live on the laptop with faster-whisper (or recorded on the microphone)
   - extraction and ambiguity-aware landmark geocoding
@@ -117,4 +118,4 @@ The legacy Streamlit dashboard is still available: `make dashboard`.
 
 ## License
 
-Apache-2.0
+Apache-2.0. No patents are filed or planned: the engine is meant to be reused by any city, toward the Digital Public Goods standard.

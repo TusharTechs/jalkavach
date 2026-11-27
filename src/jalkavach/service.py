@@ -19,6 +19,7 @@ import tempfile
 import threading
 import time
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -59,7 +60,9 @@ class Service:
         self.D = int(self.replay["obs"]["days"])
         self.lat = np.array([n["lat"] for n in self.replay["nodes"]])
         self.lon = np.array([n["lon"] for n in self.replay["nodes"]])
-        self.labels = [self._node_label(i) for i in range(self.N)]
+        both = [self._node_label(i) for i in range(self.N)]
+        self.labels = [b[0] for b in both]
+        self.labels_hi = [b[1] for b in both]
         self.on_hours = supply_on_mask(self.ward.cfg["supply"]["windows"])
         names = list(self.ward.nodes.index)
         self.pipe_km = {pid: float(p.length) / 1000 for pid, p in self.ward.pipes.iterrows()}
@@ -69,11 +72,19 @@ class Service:
         self._post_cache: dict = {}
         self.actions: list[dict] = []
         self._whisper = None
-        threading.Thread(target=self._warm_whisper, daemon=True).start()
+        self._whisper_thread = threading.Thread(target=self._warm_whisper, daemon=True)
+        self._whisper_thread.start()
 
     # ----------------------------------------------------------- labels
-    def _node_label(self, i: int) -> str:
-        """'Lane 59 · 120 m NE of Park 2'. Generic landmark types only, never business names."""
+    @staticmethod
+    def _poi_hi(p: dict) -> str:
+        tail = p["name"].split()[-1]
+        suffix = f" {tail}" if (tail.isdigit() or (len(tail) == 1 and tail.isalpha())) and tail != p["name"] else ""
+        return (p.get("name_hi") or p["name"]) + suffix
+
+    def _node_label(self, i: int) -> tuple[str, str]:
+        """('Lane 59 · 120 m NE of Park 2', 'गली 59 · पार्क 2 से 120 मी उत्तर-पूर्व').
+        Generic landmark types only, never business names."""
         best, bd, dy, dx = None, 1e18, 0.0, 0.0
         for p in self.pois:
             y = (self.lat[i] - p["lat"]) * 111_000
@@ -81,13 +92,17 @@ class Service:
             if x * x + y * y < bd:
                 best, bd, dy, dx = p, x * x + y * y, y, x
         if best is None or bd ** 0.5 > 450:
-            return f"Lane {i}"
+            return f"Lane {i}", f"गली {i}"
         dist = bd ** 0.5
+        hi = self._poi_hi(best)
         if dist < 40:
-            return f"Lane {i} · at {best['name']}"
+            return f"Lane {i} · at {best['name']}", f"गली {i} · {hi} के पास"
         ang = (np.degrees(np.arctan2(dx, dy)) + 360) % 360
-        compass = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][int((ang + 22.5) // 45) % 8]
-        return f"Lane {i} · {int(round(dist / 10) * 10)} m {compass} of {best['name']}"
+        k = int((ang + 22.5) // 45) % 8
+        compass = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][k]
+        dish = ["उत्तर", "उत्तर-पूर्व", "पूर्व", "दक्षिण-पूर्व", "दक्षिण", "दक्षिण-पश्चिम", "पश्चिम", "उत्तर-पश्चिम"][k]
+        m = int(round(dist / 10) * 10)
+        return f"Lane {i} · {m} m {compass} of {best['name']}", f"गली {i} · {hi} से {m} मी {dish}"
 
     def now(self, day: int, hour: int) -> datetime:
         return BASE_DATE + timedelta(days=day, hours=hour)
@@ -99,27 +114,43 @@ class Service:
         return {"ok": True}
 
     # ----------------------------------------------------------- engine
-    def _extras(self, kind: str, upto_day: int) -> list[dict]:
-        return [a for a in self.actions if a["kind"] == kind and a["day"] <= upto_day]
+    def _extras(self, kind: str, cutoff: datetime) -> list[dict]:
+        """Recorded actions of one kind that had happened by `cutoff` (causal: never the future)."""
+        return [a for a in self.actions if a["kind"] == kind and a["ts"] <= cutoff]
 
-    def observations(self, today: int) -> Observations:
+    def observations(self, today: int, cutoff: datetime | None = None) -> Observations:
+        cutoff = cutoff or self.now(today, EVAL_HOUR)
         o = self.replay["obs"]
         C = np.zeros((o["n_nodes"], o["days"]), dtype=int)
         for n, d, c in o["complaints"]:
             C[n, d] += c
-        for a in self._extras("complaint", today):
-            C[a["node"], a["day"]] += 1
+        for a in self._extras("complaint", cutoff):
+            C[a["node"], min(a["day"], today)] += 1
         tests = [FieldTest(d, n, f, k) for d, n, f, k in o["tests"]]
-        tests += [FieldTest(a["day"], a["node"], a["failed"], "chlorine") for a in self._extras("test", today)]
+        tests += [FieldTest(min(a["day"], today), a["node"], a["failed"], "chlorine") for a in self._extras("test", cutoff)]
         return Observations(complaints=C, syndromic=np.array(o["syndromic"]),
                             hospital=np.array(o["hospital"]), tests=[t for t in tests if t.day <= today])
 
-    def posterior(self, today: int):
-        sig = (today, tuple((a["kind"], a["day"], a.get("node"), a.get("failed"))
-                            for a in self.actions if a["kind"] in ("complaint", "test") and a["day"] <= today))
+    def posterior(self, today: int, cutoff: datetime | None = None):
+        """Posterior from evidence available at `cutoff` (default: that day's scheduled run at EVAL_HOUR).
+
+        Alerts are decided only by the scheduled runs; once an alert is open, the ranking is
+        refreshed live as new evidence arrives (cutoff = now)."""
+        cutoff = cutoff or self.now(today, EVAL_HOUR)
+        sig = (today, tuple((a["kind"], min(a["day"], today), a.get("node"), a.get("failed"))
+                            for a in self.actions if a["kind"] in ("complaint", "test") and a["ts"] <= cutoff))
         if sig not in self._post_cache:
-            self._post_cache[sig] = combine(self.ctx, loglik_terms(self.ctx, self.observations(today), today))
+            self._post_cache[sig] = combine(self.ctx, loglik_terms(self.ctx, self.observations(today, cutoff), today))
         return self._post_cache[sig]
+
+    def exposed_people(self, nodes: list[int], min_reach: float = 0.03) -> int:
+        """Residents whose water can pass through any candidate junction (EPANET source trace).
+
+        An upper bound on who could be exposed if the ingress is in the credible set."""
+        if not nodes:
+            return 0
+        reach = self.ctx.R[np.asarray(nodes)].max(axis=0)
+        return int(round(float(self.ctx.pop[reach > min_reach].sum()), -1))
 
     def alert_index(self, p: float) -> float:
         return float(min(99.0, 100 / (1 + np.exp(-(_logit(p) - _logit(self.thr))))))
@@ -157,8 +188,10 @@ class Service:
     def _open(self, eng, first: int, opened: datetime):
         pf = self.posterior(first)
         cands = [{"node": int(i), "p": float(pf.p_location[i]), "label": self.labels[int(i)]} for i in pf.top_k(3)]
-        return eng.open_alert(f"JK-{first:02d}-W00", "Ward 00 · Demo Nagar", opened, pf.p_event, cands,
-                              {k: round(v, 2) for k, v in pf.contributions.items()})
+        a = eng.open_alert(f"JK-{first:02d}-W00", "Ward 00 · Demo Nagar", opened, pf.p_event, cands,
+                           {k: round(v, 2) for k, v in pf.contributions.items()})
+        a.opened_label = f"Day {first}, {EVAL_HOUR:02d}:00 (simulation clock)"
+        return a
 
     def _apply(self, eng, alert, log, a: dict) -> None:
         aid = alert.id if alert else "-"
@@ -170,15 +203,17 @@ class Service:
                        {"node": a["node"], "mg_l": a["value"], "below_0_2": a["failed"]})
         elif a["kind"] == "stage" and alert is not None:
             act, actor = a["action"], a["actor"]
+            why = {"reason_for_delay": a["note"]} if a.get("note") else None
             if act == "acknowledge" and alert.stage_index == 0 and alert.status == "open":
-                eng.complete_stage(alert, actor, a["ts"], "acknowledged")
+                eng.complete_stage(alert, actor, a["ts"], "acknowledged", why)
             elif act == "samples" and alert.stage_index == 1 and alert.status == "open":
-                eng.complete_stage(alert, actor, a["ts"], "field tests recorded")
+                eng.complete_stage(alert, actor, a["ts"], "field tests recorded", why)
             elif act == "confirm" and alert.stage_index == 2 and alert.status == "open":
-                post = self.posterior(a["day"])
+                post = self.posterior(a["day"], a["ts"])
                 alert.candidates = [{"node": int(i), "p": float(post.p_location[i]), "label": self.labels[int(i)]}
                                     for i in post.top_k(3)]
-                eng.confirm(alert, actor, a["ts"], [c["label"] for c in alert.candidates])
+                eng.confirm(alert, actor, a["ts"], [c["label"] for c in alert.candidates],
+                            [self.labels_hi[c["node"]] for c in alert.candidates])
             elif act == "clear" and alert.stage_index == 2 and alert.status == "open":
                 eng.clear(alert, actor, a["ts"], "field tests normal")
             elif act in ("approve_work_order", "approve_advisory") and alert.status == "confirmed":
@@ -193,7 +228,7 @@ class Service:
         for i, n in enumerate(r["nodes"]):
             age = feats["age"].iloc[i]
             nodes.append({"i": i, "lat": n["lat"], "lon": n["lon"], "pop": round(n["pop"]),
-                          "cl": round(n["cl_base"], 3), "label": self.labels[i],
+                          "cl": round(n["cl_base"], 3), "label": self.labels[i], "label_hi": self.labels_hi[i],
                           "age": None if np.isnan(age) else float(age),
                           "sewer": round(float(feats["sewer"].iloc[i]), 2),
                           "deficit": round(float(feats["pressure"].iloc[i]), 2), "prior": r["prior"][i]})
@@ -201,7 +236,7 @@ class Service:
         pipes = [{**e, "from": vis.get(e["id"], {}).get("from", e["a"]), "to": vis.get(e["id"], {}).get("to", e["b"]),
                   "flow_lps": vis.get(e["id"], {}).get("flow_lps", 0.0), "velocity": vis.get(e["id"], {}).get("velocity", 0.0)}
                  for e in r["pipes"]]
-        pois = [{"name": p["name"], "name_hi": p.get("name_hi", ""), "kind": p["kind"], "lat": p["lat"], "lon": p["lon"],
+        pois = [{"name": p["name"], "name_hi": self._poi_hi(p), "kind": p["kind"], "lat": p["lat"], "lon": p["lon"],
                  "pharmacy": p["kind"] == "Medical store"} for p in self.pois]
         return {"label": r["label"], "provenance": r["provenance"], "nodes": nodes, "pipes": pipes, "pois": pois,
                 "trips": self.visual["trips"], "trip_loop_s": self.visual["trip_loop_s"], "source": self.visual["source"],
@@ -229,6 +264,12 @@ class Service:
                 "headline": {"lead_days": q["lead_F_vs_H"], "detected_F": q["F"]["detected"][0],
                              "detected_H": q["H"]["detected"][0], "detected_CC": q["CC"]["detected"][0],
                              "det_gain_vs_CC": q["detect_rate_diff_F_vs_CC"],
+                             "routing": {k: {"median": self.summary["routing"][k]["median_tests_to_top3"][0],
+                                             "mean": round(self.summary["routing"][k]["mean_tests_to_top3"][0], 1)}
+                                         for k in ("info_gain", "random")},
+                             "n_junctions": int(self.N),
+                             "equity_detected": {k: v["detected_F"] for k, v in self.summary["equity"].items()},
+                             "det_gain_vs_CC_monthly": self.summary["detection"]["monthly"]["detect_rate_diff_F_vs_CC"],
                              "top3_F": loc["top3@3:F"][0], "top3_C": loc["top3@3:C"][0], "top3_CC": loc["top3@3:CC"][0],
                              "top3_F_uniform": uni.get("top3@3:F", [None])[0],
                              "coverage": loc["coverage90:F"][0], "coverage_uniform": uni.get("coverage90:F", [None])[0],
@@ -242,18 +283,20 @@ class Service:
             now = self.now(day, hour)
             # the engine evaluates each day at EVAL_HOUR; before that, show yesterday's evaluation
             eval_day = day if hour >= EVAL_HOUR else max(2, day - 1)
-            post = self.posterior(eval_day)
-            alert, eng, _ = self._rebuild(now)
+            alert, eng, log = self._rebuild(now)
             alerting = alert is not None
+            post = self.posterior(eval_day, now if alerting else None)
             top = post.top_k(5)
             sugg = []
             if alerting:
                 eig = expected_information_gain(self.ctx, post, min(eval_day + 1, self.D - 1))
-                sugg = [{"node": int(i), "eig": round(float(eig[i]), 4), "label": self.labels[int(i)]}
+                sugg = [{"node": int(i), "eig": round(float(eig[i]), 4), "label": self.labels[int(i)],
+                         "label_hi": self.labels_hi[int(i)]}
                         for i in np.argsort(-eig)[:2]]
-            obs = self.observations(day)
+            obs = self.observations(day, now)
             cred = [int(i) for i in post.credible_set(0.9)]
             cred_set = set(cred)
+            exposed = self.exposed_people(cred)
             search_km = sum(km for pid, km in self.pipe_km.items()
                             if self.pipe_ends[pid][0] in cred_set or self.pipe_ends[pid][1] in cred_set)
             mapc = int(top[0])
@@ -265,15 +308,17 @@ class Service:
                        "stage_index": alert.stage_index, "stage": st["stage"], "owner": st["owner"],
                        "due": st["due"].isoformat() if st["due"] else None,
                        "remaining_h": round(st.get("remaining_h", 0.0), 1), "overdue_h": round(st["overdue_h"], 1),
-                       "escalated_to": st["escalated_to"], "work_order": alert.work_order, "advisory": alert.advisory}
+                       "escalated_to": st["escalated_to"], "work_order": alert.work_order, "advisory": alert.advisory,
+                       "approved": [r["action"].split(":", 1)[1] for r in log.rows() if r["action"].startswith("approved:")]}
             return {
                 "day": day, "hour": hour, "eval_day": eval_day, "now": now.isoformat(),
                 "supply_on": bool(self.on_hours[hour]),
                 "p_event": post.p_event, "alert_index": round(self.alert_index(post.p_event), 1),
                 "status": "ALERT" if alerting else "NORMAL",
                 "p_location": [round(float(x), 5) for x in post.p_location],
-                "top": [{"node": int(i), "p": float(post.p_location[i]), "label": self.labels[int(i)]} for i in top],
-                "credible90": cred, "search_km": round(search_km, 2), "total_km": round(self.total_km, 2),
+                "top": [{"node": int(i), "p": float(post.p_location[i]), "label": self.labels[int(i)],
+                         "label_hi": self.labels_hi[int(i)]} for i in top],
+                "credible90": cred, "exposed_people": exposed, "search_km": round(search_km, 2), "total_km": round(self.total_km, 2),
                 "contributions": {k: round(v, 2) for k, v in post.contributions.items()},
                 "onset_range": [int(post.onsets[np.argsort(-post.p_onset)[:2]].min()),
                                 int(post.onsets[np.argsort(-post.p_onset)[:2]].max())],
@@ -290,10 +335,10 @@ class Service:
                 "plume": {"node": mapc, "p": float(post.p_location[mapc]),
                           "arrival_h": self.visual["arrival_h"][mapc],
                           "reach": [round(float(x), 4) for x in self.ctx.R[mapc]]},
-                "truth": ({"node": truth["node"], "label": self.labels[truth["node"]], "onset_day": truth["onset_day"],
+                "truth": ({"node": truth["node"], "label": self.labels[truth["node"]], "label_hi": self.labels_hi[truth["node"]], "onset_day": truth["onset_day"],
                            "rank": post.rank_of(truth["node"]) + 1} if alerting else None),
                 "escalation": esc,
-                "extras": {"complaints": len(self._extras("complaint", day)), "tests": len(self._extras("test", day)),
+                "extras": {"complaints": len(self._extras("complaint", now)), "tests": len(self._extras("test", now)),
                            "actions": len(self.actions)},
             }
 
@@ -311,6 +356,8 @@ class Service:
         if c.node is not None:
             d["label"] = self.labels[c.node]
             d["lat"], d["lon"] = float(self.lat[c.node]), float(self.lon[c.node])
+        d["ambiguous"] = c.candidates > 1
+        d["options"] = [{**o, "label": self.labels[o["node"]]} for o in c.options]
         return d
 
     def record(self, kind: str, day: int, hour: int, **kw) -> dict:
@@ -320,14 +367,32 @@ class Service:
             self._post_cache = {}
         return a
 
-    def add_complaint(self, text: str, day: int, hour: int, channel: str = "voice note") -> dict:
+    def _clip_time(self, day: int, hour: int) -> tuple[int, int]:
+        return int(np.clip(day, 2, self.D - 1)), int(np.clip(hour, 0, 23))
+
+    def _live(self, day: int, hour: int):
+        """Posterior with all evidence available right now (what the screen shows)."""
+        return self.posterior(day if hour >= EVAL_HOUR else max(2, day - 1), self.now(day, hour))
+
+    def add_complaint(self, text: str, day: int, hour: int, channel: str = "voice note",
+                      node: int | None = None) -> dict:
+        day, hour = self._clip_time(day, hour)
         d = self.parse_complaint(text)
+        if node is not None:                       # the officer picked one of the ambiguous landmarks
+            chosen = [o for o in d.get("options", []) if o["node"] == node]
+            if not chosen:
+                return {"added": False, "parsed": d, "reason": "that place is not one of the matches"}
+            d["node"], d["label"], d["place_match"] = int(node), self.labels[int(node)], chosen[0]["name"]
+            d["lat"], d["lon"] = float(self.lat[int(node)]), float(self.lon[int(node)])
+            d["ambiguous"] = False
         if d["node"] is None or not d["water_quality"]:
             return {"added": False, "parsed": d, "reason": "no known landmark heard, or not about water quality"}
-        before = self.posterior(day).p_location[d["node"]] if day >= 2 else 0.0
+        if d.get("ambiguous"):
+            return {"added": False, "parsed": d, "reason": f"{d['candidates']} places match: choose which one"}
+        before = self._live(day, hour).p_location[d["node"]]
         self.record("complaint", day, hour, node=d["node"], channel=channel,
                     colour=d["colour"], odour=d["odour"], symptoms=d["symptoms"])
-        after = self.posterior(day).p_location[d["node"]]
+        after = self._live(day, hour).p_location[d["node"]]
         return {"added": True, "parsed": d, "p_before": float(before), "p_after": float(after)}
 
     # whisper: warm the model once in the background so the first live transcription is quick
@@ -338,25 +403,45 @@ class Service:
         except Exception:
             self._whisper = None
 
+    def asr_status(self) -> dict:
+        if self._whisper_thread is not None and self._whisper_thread.is_alive():
+            return {"state": "warming", "label": "Hindi speech model loading (about a minute after start)"}
+        if self._whisper is None:
+            return {"state": "unavailable", "label": "speech model not installed: cached transcripts are used"}
+        return {"state": "ready", "label": "faster-whisper medium · ready on this laptop"}
+
     def _wav16k(self, src: str) -> str:
         out = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-ar", "16000", "-ac", "1", out], check=True)
+        try:
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-ar", "16000", "-ac", "1", out],
+                           check=True, timeout=60)
+        except (FileNotFoundError, subprocess.SubprocessError) as exc:
+            Path(out).unlink(missing_ok=True)
+            raise RuntimeError("could not convert the recording (is ffmpeg installed?)") from exc
         return out
 
     def transcribe_live(self, path: str, convert: bool = True) -> dict:
         """Run local faster-whisper on the audio now (no cache), and time it."""
         t0 = time.time()
         if self._whisper is None:
+            why = "model still loading" if self.asr_status()["state"] == "warming" else "local ASR model unavailable"
             try:
-                text = transcribe(path)  # cached transcript (model not installed/available)
-                return {"ok": True, "text": text, "source": "cached transcript (local ASR model unavailable)",
+                text = transcribe(path)  # cached transcript
+                return {"ok": True, "text": text, "source": f"cached transcript ({why})",
                         "seconds": round(time.time() - t0, 2), "parsed": self.parse_complaint(text)}
             except Exception as exc:
-                return {"ok": False, "error": str(exc)}
+                return {"ok": False, "error": f"{why}; no cached transcript for this audio ({exc})"}
         from .intake import _load_wav
-        wav = self._wav16k(path) if convert else path
-        segs, _ = self._whisper.transcribe(_load_wav(wav), language="hi", beam_size=5)
-        text = " ".join(s.text.strip() for s in segs).strip()
+        try:
+            wav = self._wav16k(path) if convert else path
+        except RuntimeError as exc:
+            return {"ok": False, "error": str(exc)}
+        try:
+            segs, _ = self._whisper.transcribe(_load_wav(wav), language="hi", beam_size=5)
+            text = " ".join(s.text.strip() for s in segs).strip()
+        finally:
+            if convert:
+                Path(wav).unlink(missing_ok=True)
         return {"ok": True, "text": text, "source": "faster-whisper medium · on this laptop",
                 "seconds": round(time.time() - t0, 2), "parsed": self.parse_complaint(text)}
 
@@ -388,13 +473,17 @@ class Service:
                 "scale": [{"mg": m, "rgb": c} for m, c in DPD_SCALE]}
 
     def add_test(self, node: int, day: int, hour: int, failed: bool, value: float | None) -> dict:
-        before = self.posterior(day).p_location[int(node)]
+        if not 0 <= int(node) < self.N:
+            return {"added": False, "error": "unknown junction"}
+        day, hour = self._clip_time(day, hour)
+        before = self._live(day, hour).p_location[int(node)]
         self.record("test", day, hour, node=int(node), failed=bool(failed),
                     value=None if value is None else round(float(value), 2))
-        return {"added": True, "p_before": float(before), "p_after": float(self.posterior(day).p_location[int(node)])}
+        return {"added": True, "p_before": float(before), "p_after": float(self._live(day, hour).p_location[int(node)])}
 
     # ----------------------------------------------------------- escalation
-    def alert_action(self, action: str, actor: str, day: int, hour: int) -> dict:
+    def alert_action(self, action: str, actor: str, day: int, hour: int, note: str = "") -> dict:
+        day, hour = self._clip_time(day, hour)
         now = self.now(day, hour)
         alert, _, _ = self._rebuild(now)
         if alert is None:
@@ -407,7 +496,7 @@ class Service:
                    "approve_advisory": alert.status == "confirmed"}
         if not allowed.get(action):
             return {"ok": False, "error": f"'{action}' is not available at this stage"}
-        self.record("stage", day, hour, action=action, actor=actor)
+        self.record("stage", day, hour, action=action, actor=actor, note=note.strip()[:200])
         return {"ok": True}
 
     # ----------------------------------------------------------- audit
@@ -426,7 +515,10 @@ class Service:
         """Printable pack for the drafts: alert ID, audit head hash, SIMULATED watermark."""
         alert, _, log = self._rebuild(self.now(day, hour))
         rows = log.rows()
-        return {"alert": alert.id if alert else None, "work_order": alert.work_order if alert else None,
+        post = self._live(*self._clip_time(day, hour))
+        return {"alert": alert.id if alert else None,
+                "exposed_people": self.exposed_people([int(i) for i in post.credible_set(0.9)]),
+                "day": int(day), "hour": int(hour), "work_order": alert.work_order if alert else None,
                 "advisory": alert.advisory if alert else None, "audit_head": rows[-1]["hash"] if rows else None,
                 "generated": self.now(day, hour).isoformat(),
                 "digest": hashlib.sha256(json.dumps([r["hash"] for r in rows]).encode()).hexdigest()[:16]}
@@ -445,4 +537,5 @@ class Service:
             dl = np.where(main[col].isna(), np.inf, main[col]) - main["t0"]
             curves[m] = [round(float((dl <= x).mean()), 4) for x in range(0, 15)]
         return {"summary": self.summary, "cdf": curves,
-                "net3": json.loads((ROOT / "results/summary_net3.json").read_text())["detection"]["quarterly"]}
+                "net3": {**json.loads((ROOT / "results/summary_net3.json").read_text())["detection"]["quarterly"],
+                         "top3": json.loads((ROOT / "results/summary_net3.json").read_text())["localisation"]["main"]["top3@3:F"][0]}}

@@ -10,6 +10,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+from starlette.concurrency import run_in_threadpool
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -38,6 +39,7 @@ class TextIn(BaseModel):
     hour: int = 18
     add: bool = False
     channel: str = "voice note"
+    node: int | None = None
 
 
 class TestIn(BaseModel):
@@ -52,6 +54,7 @@ class ActionIn(BaseModel):
     actor: str
     day: int
     hour: int = 18
+    note: str = ""
 
 
 @app.get("/api/meta")
@@ -88,18 +91,30 @@ def clip_audio(cid: str):
 @app.post("/api/complaint")
 def complaint(body: TextIn):
     if body.add:
-        return svc.add_complaint(body.text, body.day, body.hour, body.channel)
+        return svc.add_complaint(body.text, body.day, body.hour, body.channel, body.node)
     return {"parsed": svc.parse_complaint(body.text)}
 
 
 @app.post("/api/voice")
 async def voice(file: UploadFile = File(...)):
-    """Microphone recording (any format ffmpeg reads) -> local Hindi ASR -> parsed complaint."""
+    """Microphone recording (any format ffmpeg reads) -> local Hindi ASR -> parsed complaint.
+
+    ASR runs in a worker thread so map and timeline requests keep flowing meanwhile."""
     suffix = Path(file.filename or "rec.webm").suffix or ".webm"
-    with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
-        tmp.write(await file.read())
-        tmp.flush()
-        return svc.transcribe_live(tmp.name, convert=True)
+    data = await file.read()
+
+    def work():
+        with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
+            tmp.write(data)
+            tmp.flush()
+            return svc.transcribe_live(tmp.name, convert=True)
+
+    return await run_in_threadpool(work)
+
+
+@app.get("/api/asr/status")
+def asr_status():
+    return svc.asr_status()
 
 
 @app.post("/api/transcribe/{cid}")
@@ -125,7 +140,7 @@ def add_test(body: TestIn):
 
 @app.post("/api/alert/{action}")
 def alert_action(action: str, body: ActionIn):
-    return svc.alert_action(action, body.actor, body.day, body.hour)
+    return svc.alert_action(action, body.actor, body.day, body.hour, body.note)
 
 
 @app.get("/api/audit")

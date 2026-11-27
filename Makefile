@@ -1,4 +1,4 @@
-.PHONY: setup test demo app web dashboard replay physics eval report clean
+.PHONY: setup test demo demo-check app web dashboard replay physics eval report clean
 
 setup:            ## install pinned environment
 	uv sync --frozen
@@ -15,6 +15,9 @@ eval:             ## run the pre-registered evaluation (ward + Net3)
 
 report:           ## tables and figures from the last eval
 	uv run python -m harness.report --tag ward --tag net3
+
+demo-check:       ## pre-stage check: endpoints, story path, speech model, web build freshness
+	uv run python scripts/demo_check.py
 
 app:              ## JalKavach command centre at http://localhost:8036 (offline; uses committed web/dist)
 	uv run uvicorn app.server:app --host 127.0.0.1 --port 8036

@@ -59,7 +59,7 @@ Written **before** the first harness run (26 Nov 2026). It was committed in the 
 - **Calibration:** coverage of the 90% credible set at the detection day, plus a reliability diagram over 10 bins of the predicted p(location).
 - **Sensitivity sweeps:** complaint delay mean {0.5, 1.5, 3}, geocode radius {60, 120, 250} m, psi {5, 10, 15}.
 - **Equity:** detection delay split by the reporting-propensity tercile of the population exposed.
-- **Failure cases:** missed and mislocalised scenarios, with their parameters, published in `results/failures.csv`.
+- **Failure cases:** missed and mislocalised scenarios, with their parameters, published in `results/failures_ward.csv` and `results/failures_net3.csv`.
 
 ## Second topology (robustness only)
 - EPANET example network Net3, 24×7 supply, uniform prior, same signal-mismatch distribution.
@@ -72,7 +72,12 @@ Written **before** the first harness run (26 Nov 2026). It was committed in the 
   - **Seeds.** The held-out run now uses fresh seeds (base 100,000), disjoint from the development seeds (1,000–31,000 and 500–579).
   - **Metrics.** No metric, threshold or scenario distribution was changed.
 - **26 Nov, ward relocation.**
-  - The demo ward was moved from its first location to a neutral residential area (Indore, Scheme No. 78 area), labelled "Ward 00 · Demo Nagar". The first location coincided with the site of a real 2025–26 outbreak, which was inappropriate for a public demonstration.
+  - The demo ward was moved from its first location, labelled "Ward 00 · Demo Nagar". The first location coincided with the site of a real 2025–26 outbreak, which was inappropriate for a public demonstration.
   - The new ward is larger: 146 junctions vs. 84. Its trunk mains gained a 300 mm diameter tier so that pressures stay physical.
   - The full pre-registered evaluation was re-run **unchanged** on the new ward with the same held-out seeds. All numbers reported now come from that run.
   - The escalation policy now notifies every 24 h (previously 12 h). This does not affect any metric.
+- **27 Nov, second ward relocation and engine fixes (reviewer findings).**
+  - The 26 Nov location was mis-described: its streets are in Indore's old city (Lalbagh / Moti Tabela), not Scheme No. 78. It was moved to Nipania (Tulsi Nagar area), a post-2000 residential colony, after checking reporting for any linked event. Places of worship were removed from the landmark gazetteer.
+  - Causality fix in the web service only: evidence is admitted by its timestamp, so an action after a day's 18:00 run counts toward the next run. The harness never used the service, so no metric definition changed.
+  - The full pre-registered evaluation was re-run **unchanged** on the new ward with the same held-out seeds. The ward is larger (246 junctions vs. 146): lead rose to 7.0 days and detection to 90%, while top-3 localisation fell to 39%. Both are reported as measured.
+  - Bootstrap CIs now use a separate seeded stream per topology, so re-running one topology never shifts another's intervals.

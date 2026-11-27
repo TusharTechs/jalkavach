@@ -57,6 +57,7 @@ class Complaint:
     node: int | None = None
     radius_m: float | None = None
     candidates: int = 0
+    options: list[dict] = field(default_factory=list)   # the tied places when ambiguous
     water_quality: bool = False
 
     def as_dict(self) -> dict:
@@ -184,8 +185,14 @@ class Gazetteer:
             if s > score:
                 best, score = e, s
         # several different places match equally well (e.g. "school" when there are 7)
-        ties = {e["node"] for s, e in scored if s >= score - 1.0 and s >= min_score}
-        c.candidates = len(ties)
+        tied = {}
+        for s, e in scored:
+            if s >= score - 1.0 and s >= min_score:
+                tied.setdefault(e["node"], e["name"])
+        c.candidates = len(tied)
+        if c.candidates > 1:
+            # an ambiguous landmark is never silently pinned to one place: the officer must choose
+            c.options = [{"name": n, "node": k} for k, n in sorted(tied.items(), key=lambda kv: kv[1])]
         if best and score >= min_score:
             c.place_match, c.match_score, c.node, c.radius_m = best["name"], float(score), best["node"], best["radius_m"]
             if c.candidates > 1:

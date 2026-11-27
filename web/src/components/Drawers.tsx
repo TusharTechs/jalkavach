@@ -5,25 +5,27 @@ import clsx from "clsx";
 import WaveSurfer from "wavesurfer.js";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, LabelList } from "recharts";
 import {
-  Beaker, Camera, Check, CheckCircle2, ChevronRight, FileText, Link2, Lock, MapPin, Mic, Pause, Play, Send,
+  Beaker, Camera, Check, CheckCircle2, FileText, Link2, Lock, MapPin, Mic, Pause, Play, Send,
   ShieldAlert, ShieldCheck, Sparkles, Stamp, Upload, X, XCircle, Languages, Square, Printer, UserRound, Hash,
 } from "lucide-react";
 import { api, type ASR, type AuditRow, type Clip, type KitResult, type Parsed } from "../api";
 import { useStore } from "../store";
 import { pct } from "../fmt";
+import { useL, useT } from "../i18n";
 
 const SHOT = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("shot");
 
 export function Shell({ title, icon, children, wide = false }: { title: string; icon: React.ReactElement; children: React.ReactNode; wide?: boolean }) {
   const { setView } = useStore();
+  const t = useT();
   return (
-    <motion.div initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 60, opacity: 0 }} transition={{ type: "spring", stiffness: 220, damping: 28 }}
+    <motion.div role="dialog" aria-label={t(title)} initial={{ x: 60, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 60, opacity: 0 }} transition={{ type: "spring", stiffness: 220, damping: 28 }}
       className={clsx("absolute right-4 top-[124px] bottom-[190px] z-40 glass rounded-3xl flex flex-col overflow-hidden", wide ? "left-[280px] !bg-[#061422]/95" : "w-[640px] !bg-[#061422]/92")}>
       <div className="flex items-center gap-3 px-6 pt-5 pb-3 border-b border-white/5">
         <div className="w-9 h-9 rounded-xl grid place-items-center bg-cyan/15 text-aqua">{icon}</div>
-        <div className="font-display text-xl font-semibold">{title}</div>
+        <div className="font-display text-xl font-semibold">{t(title)}</div>
         <div className="flex-1" />
-        <button onClick={() => setView("command")} className="w-9 h-9 rounded-xl grid place-items-center hover:bg-white/5 text-mist"><X size={18} /></button>
+        <button aria-label="Close (Esc)" onClick={() => setView("command")} className="w-9 h-9 rounded-xl grid place-items-center hover:bg-white/5 text-mist"><X size={18} /></button>
       </div>
       <div className="flex-1 overflow-auto scrollbar-thin px-6 py-5">{children}</div>
     </motion.div>
@@ -44,6 +46,9 @@ function Chip({ children, tone }: { children: React.ReactNode; tone: "amber" | "
 /* ------------------------------------------------------------------ intake */
 export function Intake() {
   const { day, hour, refresh, setFocus, notify } = useStore();
+  const t = useT();
+  const [asrState, setAsrState] = useState<{ state: string; label: string } | null>(null);
+  const [pick, setPick] = useState<number | null>(null);
   const [tab, setTab] = useState<"voice" | "kit">(new URLSearchParams(window.location.search).get("tab") === "kit" ? "kit" : "voice");
   const [clips, setClips] = useState<Clip[]>([]);
   const [sel, setSel] = useState(0);
@@ -60,6 +65,12 @@ export function Intake() {
 
   useEffect(() => { api.clips().then(setClips); }, []);
   useEffect(() => {
+    let alive = true;
+    const poll = async () => { try { const s = await api.asrStatus(); if (!alive) return; setAsrState(s); if (s.state === "warming") setTimeout(poll, 4000); } catch { /* server busy */ } };
+    poll();
+    return () => { alive = false; };
+  }, []);
+  useEffect(() => {
     if (!waveRef.current || !clips[sel]) return;
     ws.current?.destroy();
     ws.current = WaveSurfer.create({ container: waveRef.current, height: 56, waveColor: "#1f4a73", progressColor: "#67e8f9", cursorColor: "#ff6b6b", barWidth: 3, barGap: 2, barRadius: 3, url: `/api/clips/${clips[sel].id}.wav` });
@@ -69,7 +80,10 @@ export function Intake() {
   }, [clips, sel]);
 
   const clip = clips[sel];
-  const showResult = (r: ASR, en: string | null) => { setAsr(r); setParsed(r.parsed); setEnglish(en); setPhase("done"); };
+  const showResult = (r: ASR, en: string | null) => {
+    if (!r.ok) { setPhase("idle"); notify(r.error ?? "Transcription failed", "bad"); return; }
+    setAsr(r); setParsed(r.parsed); setEnglish(en); setPick(null); setPhase("done");
+  };
   const transcribe = async () => {
     if (!clip) return;
     setPhase("busy"); setDelta(null);
@@ -90,11 +104,17 @@ export function Intake() {
       mr.start(); setRec(mr);
     } catch { notify("Microphone not available in this browser", "bad"); }
   };
-  const parseFree = async () => { if (!free.trim()) return; const r = await api.parse(free); setAsr(null); setParsed(r.parsed); setEnglish(null); setPhase("done"); };
-  const pin = () => parsed?.lat && setFocus({ lon: parsed.lon!, lat: parsed.lat!, label: parsed.label ?? "", kind: "complaint", at: Date.now() });
+  const parseFree = async () => { if (!free.trim()) return; const r = await api.parse(free); setAsr(null); setParsed(r.parsed); setEnglish(null); setPick(null); setPhase("done"); };
+  const { net } = useStore();
+  const pin = () => {
+    const n = pick !== null && net ? net.nodes[pick] : null;
+    if (n) setFocus({ lon: n.lon, lat: n.lat, label: n.label, kind: "complaint", at: Date.now() });
+    else if (parsed?.lat) setFocus({ lon: parsed.lon!, lat: parsed.lat!, label: parsed.label ?? "", kind: "complaint", at: Date.now() });
+  };
+  const needsPick = !!parsed?.ambiguous && pick === null;
   const add = async () => {
-    if (!parsed) return;
-    const r = await api.addComplaint(parsed.text, day, hour, asr ? "voice note" : "text");
+    if (!parsed || needsPick) return;
+    const r = await api.addComplaint(parsed.text, day, hour, asr ? "voice note" : "text", parsed.ambiguous ? pick : null);
     if (!r.added) { notify(`Not added: ${r.reason}`, "bad"); return; }
     pin(); await refresh();
     setDelta({ label: r.parsed.label ?? "", a: r.p_before ?? 0, b: r.p_after ?? 0 });
@@ -104,7 +124,7 @@ export function Intake() {
   return (
     <Shell title="Complaint & field-test intake" icon={<Mic size={18} />}>
       <div className="flex gap-2 mb-5">
-        {([["voice", "Citizen voice note", Mic], ["kit", "Field-test photo", Camera]] as const).map(([k, l, I]) => (
+        {([["voice", t("Citizen voice note"), Mic], ["kit", t("Field-test photo"), Camera]] as const).map(([k, l, I]) => (
           <button key={k} onClick={() => setTab(k)} className={clsx("relative px-4 py-2 rounded-xl text-[13px] flex items-center gap-2", tab === k ? "text-abyss" : "text-slate-300 bg-white/5")}>
             {tab === k && <motion.span layoutId="itab" className="absolute inset-0 rounded-xl bg-gradient-to-r from-aqua to-cyan" />}
             <I size={15} className="relative" /><span className="relative">{l}</span>
@@ -116,13 +136,13 @@ export function Intake() {
           <motion.div key="v" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
             <div className="flex gap-2 flex-wrap items-center">
               {clips.map((c, i) => (
-                <button key={c.id} onClick={() => setSel(i)} className={clsx("px-3 py-1.5 rounded-full text-[12px] border transition", i === sel ? "border-aqua text-aqua bg-cyan/10" : "border-white/10 text-mist hover:text-white")}>
-                  Voice note {i + 1}
+                <button key={c.id} onClick={() => setSel(i)} title={c.en} className={clsx("px-3 py-1.5 rounded-full text-[12.5px] border transition font-hindi", i === sel ? "border-aqua text-aqua bg-cyan/10" : "border-white/10 text-mist hover:text-white")} style={{ letterSpacing: 0 }}>
+                  {c.text.split(/[ ,।]+/).slice(0, 3).join(" ")}…
                 </button>
               ))}
               <div className="flex-1" />
               <button onClick={record} className={clsx("px-3.5 py-1.5 rounded-full text-[12.5px] font-semibold flex items-center gap-2", rec ? "bg-coral text-abyss" : "bg-white/8 text-slate-100 hover:bg-white/12")}>
-                {rec ? <><Square size={13} />Stop & transcribe</> : <><Mic size={13} />Record live</>}
+                {rec ? <><Square size={13} />{t("Stop & transcribe")}</> : <><Mic size={13} />{t("Record live")}</>}
                 {rec && <span className="w-2 h-2 rounded-full bg-abyss ping-soft" />}
               </button>
             </div>
@@ -133,10 +153,11 @@ export function Intake() {
                 </button>
                 <div ref={waveRef} className="flex-1" />
               </div>
-              <div className="text-[10.5px] text-mist/80 mt-2">Demo voices are synthetic (TTS). "Record live" uses this laptop's microphone. Audio is processed on this laptop and not stored; no phone numbers are kept.</div>
+              <div className="text-[12px] text-mist mt-2 leading-snug">{t("Audio is processed on this laptop and not stored. No phone numbers are kept. Purpose: locating unsafe water only.")} Demo voices are synthetic (TTS).</div>
+              {asrState && <div className={clsx("text-[11.5px] mt-1 flex items-center gap-1.5", asrState.state === "ready" ? "text-mint" : "text-amber")}><span className={clsx("w-1.5 h-1.5 rounded-full", asrState.state === "ready" ? "bg-mint" : "bg-amber ping-soft")} />{asrState.label}</div>}
             </div>
             <button onClick={transcribe} disabled={phase === "busy"} className="w-full rounded-xl py-3 font-display font-semibold bg-gradient-to-r from-aqua to-cyan text-abyss flex items-center justify-center gap-2 disabled:opacity-60">
-              <Sparkles size={16} />{phase === "busy" ? "Listening… (Hindi speech recognition on this laptop)" : "Transcribe & understand"}
+              <Sparkles size={16} />{phase === "busy" ? "Listening… (Hindi speech recognition on this laptop)" : t("Transcribe & understand")}
             </button>
             <div className="flex gap-2">
               <input value={free} onChange={(e) => setFree(e.target.value)} onKeyDown={(e) => e.key === "Enter" && parseFree()} placeholder="…or type a complaint in Hindi, Hinglish or English" className="flex-1 bg-black/25 border border-white/10 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-aqua" />
@@ -152,10 +173,10 @@ export function Intake() {
               )}
               {phase === "done" && parsed && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/8 bg-black/20 p-4 space-y-3">
-                  <div className="flex items-center justify-between"><div className="label">Transcript</div>{asr && <div className="text-[10.5px] text-mist">{asr.source} · {asr.seconds.toFixed(1)} s</div>}</div>
+                  <div className="flex items-center justify-between"><div className="label">{t("Transcript")}</div>{asr && <div className="text-[10.5px] text-mist">{asr.source} · {asr.seconds.toFixed(1)} s</div>}</div>
                   <div className="font-hindi text-[18px] leading-relaxed text-white" style={{ letterSpacing: 0 }}><Typewriter text={parsed.text} /></div>
                   {english && <div className="text-[12.5px] text-mist">EN: {english}</div>}
-                  <div className="label pt-1">Understood</div>
+                  <div className="label pt-1">{t("Understood")}</div>
                   <div className="flex flex-wrap gap-2">
                     {parsed.colour.map((c) => <Chip key={c} tone="amber">colour: {c}</Chip>)}
                     {parsed.odour.map((c) => <Chip key={c} tone="coral">odour: {c}</Chip>)}
@@ -164,17 +185,30 @@ export function Intake() {
                   </div>
                   <div className="flex items-center gap-2 text-[13px]">
                     <MapPin size={15} className={parsed.node !== null ? "text-aqua shrink-0" : "text-mist shrink-0"} />
-                    {parsed.node !== null ? (
+                    {parsed.node !== null && !parsed.ambiguous ? (
                       <span>Heard <b className="font-hindi">"{parsed.place_text}"</b> → <b className="text-aqua">{parsed.place_match}</b> ({parsed.match_score.toFixed(0)}% match) → {parsed.label} · ±{parsed.radius_m} m</span>
+                    ) : parsed.ambiguous ? (
+                      <span className="text-amber">Heard <b className="font-hindi">"{parsed.place_text}"</b>: {parsed.candidates} places match. It is never pinned to one by guesswork.</span>
                     ) : <span className="text-mist">No known landmark heard. Not geocoded. A field officer would call back.</span>}
                   </div>
+                  {parsed.ambiguous && (
+                    <div className="rounded-xl border border-amber/30 bg-amber/5 p-3">
+                      <div className="text-[12.5px] text-amber mb-2">{t("Which one? Several places match:")} <span className="text-mist">(the officer asks the caller, or calls back)</span></div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {parsed.options.map((o) => (
+                          <button key={o.node} onClick={() => setPick(o.node)} className={clsx("px-2.5 py-1 rounded-full text-[12px] border", pick === o.node ? "border-amber bg-amber text-abyss font-semibold" : "border-white/15 text-slate-200 hover:border-amber/60")}>{o.name}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex gap-2 pt-1">
-                    <button onClick={pin} disabled={parsed.node === null} className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[13px] flex items-center gap-2 disabled:opacity-40"><MapPin size={14} />Show on map</button>
-                    <button onClick={add} disabled={parsed.node === null || !parsed.water_quality} className="flex-1 px-4 py-2 rounded-xl bg-amber text-abyss font-semibold text-[13px] flex items-center justify-center gap-2 disabled:opacity-40"><Send size={14} />Add to evidence (day {day})</button>
+                    <button onClick={pin} disabled={parsed.node === null || needsPick} className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[13px] flex items-center gap-2 disabled:opacity-40"><MapPin size={14} />{t("Show on map")}</button>
+                    <button onClick={add} disabled={parsed.node === null || !parsed.water_quality || needsPick} className="flex-1 px-4 py-2 rounded-xl bg-amber text-abyss font-semibold text-[13px] flex items-center justify-center gap-2 disabled:opacity-40"><Send size={14} />{t("Add to evidence")} (day {day}, {String(hour).padStart(2, "0")}:00)</button>
                   </div>
                   {delta && (
                     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl bg-cyan/10 border border-cyan/20 px-3 py-2 text-[13px] text-aqua">
                       {delta.label}: probability {(100 * delta.a).toFixed(1)}% → <b>{(100 * delta.b).toFixed(1)}%</b>
+                      <div className="text-[11.5px] text-mist mt-0.5">The ranking updates now. Alerts are decided only at each day's 18:00 run, so late evidence never rewrites an earlier decision.</div>
                     </motion.div>
                   )}
                 </motion.div>
@@ -191,6 +225,7 @@ export function Intake() {
 
 function KitPanel() {
   const { state, net, day, hour, refresh, setFocus, notify } = useStore();
+  const L = useL();
   const [res, setRes] = useState<KitResult | null>(null);
   const [scan, setScan] = useState(false);
   const [node, setNode] = useState<number | null>(null);
@@ -257,7 +292,7 @@ function KitPanel() {
                 </div>
                 <div className="label">Tap where sampled</div>
                 <select value={node ?? ""} onChange={(e) => setNode(+e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-[12.5px]">
-                  {net?.nodes.map((n) => <option key={n.i} value={n.i}>{state?.suggested.some((s) => s.node === n.i) ? "★ " : ""}{n.label}</option>)}
+                  {net?.nodes.map((n) => <option key={n.i} value={n.i}>{state?.suggested.some((s) => s.node === n.i) ? "★ " : ""}{L(n)}</option>)}
                 </select>
                 <button onClick={add} disabled={!res.ok} className="w-full rounded-xl py-2.5 bg-amber text-abyss font-semibold text-[13px] flex items-center justify-center gap-2 disabled:opacity-40"><Beaker size={15} />Add field test (day {day})</button>
                 {delta && <div className="rounded-xl bg-cyan/10 border border-cyan/20 px-3 py-2 text-[12.5px] text-aqua">{delta}</div>}
@@ -293,16 +328,18 @@ const ROLE_HELP: Record<string, string> = {
 
 export function Escalation() {
   const { state, meta, day, hour, refresh, notify, setDay, role, setRole } = useStore();
+  const t = useT();
   const [lang, setLang] = useState<"hi" | "en">("hi");
-  const [stamped, setStamped] = useState<Record<string, boolean>>({});
+  const [why, setWhy] = useState("");
   const esc = state?.escalation;
   if (!meta) return null;
   const stages = meta.policy.stages;
   const roles = [...new Set([...stages.map((s) => s.owner), meta.policy.advisory_approver])];
   const act = async (a: string) => {
-    const r = await api.action(a, roles[role], day, hour);
-    if (!r.ok) notify(r.error ?? "not allowed", "bad"); else { notify(`Recorded in the audit trail: ${a.replace(/_/g, " ")}`, "good"); await refresh(); }
-    if (a.startsWith("approve") && r.ok) setStamped((s) => ({ ...s, [a]: true }));
+    const late = !!esc && esc.overdue_h > 0;
+    if (late && !why.trim() && (a === "acknowledge" || a === "samples")) { notify("SLA missed: add a reason for the delay first", "bad"); return; }
+    const r = await api.action(a, roles[role], day, hour, late ? why : "");
+    if (!r.ok) notify(r.error ?? "not allowed", "bad"); else { notify(`Recorded in the audit trail: ${a.replace(/_/g, " ")}`, "good"); setWhy(""); await refresh(); }
   };
   const exportPack = async () => {
     const p = await api.exportPack(day, hour);
@@ -310,7 +347,8 @@ export function Escalation() {
     if (!w) return;
     w.document.write(`<html><head><title>${p.alert} pack</title><style>body{font-family:Inter,Arial;padding:40px;max-width:760px;margin:auto;color:#0b2340}
       pre{white-space:pre-wrap;font-size:13px;background:#f3f7fb;padding:14px;border-radius:8px}.wm{position:fixed;top:40%;left:10%;font-size:90px;color:rgba(255,0,0,.08);transform:rotate(-20deg);font-weight:800}</style></head>
-      <body><div class="wm">SIMULATED</div><h2>JalKavach · ${p.alert}</h2><p>Generated ${p.generated} (simulation clock) · audit head <code>${(p.audit_head ?? "").slice(0, 16)}</code> · digest <code>${p.digest}</code></p>
+      <body><div class="wm">SIMULATED</div><h2>JalKavach · ${p.alert}</h2><p>Generated Day ${p.day}, ${String(p.hour).padStart(2, "0")}:00 (simulation clock) · audit head <code>${(p.audit_head ?? "").slice(0, 16)}</code> · digest <code>${p.digest}</code></p>
+      <p><b>Exposure (upper bound):</b> ≈ ${p.exposed_people.toLocaleString("en-IN")} residents can be supplied through the pipes in the 90% credible set.</p>
       <h3>Draft work order</h3><pre>${p.work_order ?? ""}</pre><h3>Draft advisory</h3><pre>${p.advisory ?? ""}</pre>
       <p style="font-size:12px;color:#555">Drafts only. Valid when approved and sent by the competent officer through official channels.</p></body></html>`);
     w.document.close(); w.print();
@@ -320,7 +358,7 @@ export function Escalation() {
   return (
     <Shell title="Alert & the city's escalation clock" icon={<ShieldAlert size={18} />}>
       <div className="flex items-center gap-2 mb-4 text-[12.5px]">
-        <UserRound size={15} className="text-aqua" /><span className="text-mist">Signed in as (demo role)</span>
+        <UserRound size={15} className="text-aqua" /><span className="text-mist">{t("Signed in as (demo role)")}</span>
         <select value={role} onChange={(e) => setRole(+e.target.value)} className="bg-black/30 border border-white/10 rounded-lg px-2 py-1.5">
           {roles.map((r, i) => <option key={r} value={i}>{r}</option>)}
         </select>
@@ -335,7 +373,7 @@ export function Escalation() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="font-display text-2xl font-bold">Alert {esc.id}</div>
             <span className={clsx("px-3 py-1 rounded-full text-[12px] font-semibold", esc.status === "open" ? "bg-coral/15 text-coral" : esc.status === "confirmed" ? "bg-amber/15 text-amber" : "bg-mint/15 text-mint")}>{esc.status}</span>
-            <div className="text-[12px] text-mist">opened Day {Math.round((new Date(esc.opened).getTime() - new Date(meta.base_date).getTime()) / 864e5 - 0.5)}, 18:00 · District Surveillance Officer notified (per city config; no live IDSP link)</div>
+            <div className="text-[12.5px] text-mist">opened Day {Math.round((new Date(esc.opened).getTime() - new Date(meta.base_date).getTime()) / 864e5 - 0.5)}, 18:00 · District Surveillance Officer informed (per city config; no live IDSP link) · ≈ {state!.exposed_people.toLocaleString("en-IN")} residents on the candidate pipes</div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {stages.map((s, k) => {
@@ -349,45 +387,54 @@ export function Escalation() {
                   <Radial frac={frac} color={col}>
                     {done ? <Check size={20} className="text-mint" /> : <span className="font-display text-[13px] num" style={{ color: col }}>{cur ? (over ? `+${esc.overdue_h.toFixed(0)}h` : `${esc.remaining_h.toFixed(0)}h`) : `${s.sla_hours}h`}</span>}
                   </Radial>
-                  <div className="mt-3 font-semibold text-[14px]">{s.label}</div>
-                  <div className="text-[11.5px] text-mist">{ROLE_HELP[s.owner] ?? s.owner}</div>
-                  <div className="text-[11px] text-mist/80 mt-1">SLA {s.sla_hours} h {done ? "· done" : ""}</div>
+                  <div className="mt-3 font-semibold text-[14px]">{t(s.label)}</div>
+                  <div className="text-[12px] text-mist">{ROLE_HELP[s.owner] ?? s.owner}</div>
+                  <div className="text-[11.5px] text-mist mt-1">SLA {s.sla_hours} h {done ? "· done" : over ? "· missed" : ""}</div>
                 </motion.div>
               );
             })}
           </div>
           {esc.status === "open" && (
-            <div className="flex gap-2 flex-wrap">
-              {esc.stage_index === 0 && <button onClick={() => act("acknowledge")} className="h-12 px-6 rounded-xl bg-gradient-to-r from-aqua to-cyan text-abyss font-display font-semibold text-[15px]">Acknowledge alert</button>}
-              {esc.stage_index === 1 && <button onClick={() => act("samples")} className="h-12 px-6 rounded-xl bg-gradient-to-r from-aqua to-cyan text-abyss font-display font-semibold text-[15px]">Field tests taken</button>}
-              {esc.stage_index === 2 && <>
-                <button onClick={() => act("confirm")} className="h-12 px-6 rounded-xl bg-coral text-abyss font-display font-semibold text-[15px]">Confirm ingress · create drafts</button>
-                <button onClick={() => act("clear")} className="h-12 px-5 rounded-xl bg-white/5 text-[13px]">Clear (false alarm)</button>
-              </>}
+            <div className="space-y-2">
+              {esc.overdue_h > 0 && esc.stage_index < 2 && (
+                <input value={why} onChange={(e) => setWhy(e.target.value)} placeholder={t("Reason for delay (recorded in the audit trail)")}
+                  aria-label={t("Reason for delay (recorded in the audit trail)")}
+                  className="w-full bg-black/25 border border-coral/40 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-coral" />
+              )}
+              <div className="flex gap-2 flex-wrap">
+                {esc.stage_index === 0 && <button onClick={() => act("acknowledge")} className="h-12 px-6 rounded-xl bg-gradient-to-r from-aqua to-cyan text-abyss font-display font-semibold text-[15px]">{t("Acknowledge alert")}</button>}
+                {esc.stage_index === 1 && <button onClick={() => act("samples")} className="h-12 px-6 rounded-xl bg-gradient-to-r from-aqua to-cyan text-abyss font-display font-semibold text-[15px]">{t("Field tests taken")}</button>}
+                {esc.stage_index === 2 && <>
+                  <button onClick={() => act("confirm")} className="h-12 px-6 rounded-xl bg-coral text-abyss font-display font-semibold text-[15px]">{t("Confirm ingress · create drafts")}</button>
+                  <button onClick={() => act("clear")} className="h-12 px-5 rounded-xl bg-white/5 text-[13px]">{t("Clear (false alarm)")}</button>
+                </>}
+              </div>
             </div>
           )}
           <div>
-            <div className="label mb-2">Escalation chain · notified only if a stage stays overdue (every {meta.policy.escalate_every_hours} h)</div>
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="label mb-2">Escalation ladder for this stage · used only if the SLA is missed (one step every {meta.policy.escalate_every_hours} h)</div>
+            <div className="relative pl-6 space-y-1.5">
+              <div className="absolute left-[9px] top-2 bottom-2 w-px bg-white/10" />
               {meta.policy.chain.map((c, i) => {
                 const lit = esc.escalated_to.includes(c);
                 return (
-                  <div key={c} className="flex items-center gap-1.5">
-                    <div className={clsx("px-3 py-1.5 rounded-xl text-[12px] border", lit ? "border-coral/60 text-coral bg-coral/10" : "border-white/10 text-mist")}>{c}{lit ? " · notified" : ""}</div>
-                    {i < meta.policy.chain.length - 1 && <ChevronRight size={14} className="text-white/20" />}
+                  <div key={c} className="relative flex items-center gap-2 text-[12.5px]">
+                    <span className={clsx("absolute -left-[19px] w-2.5 h-2.5 rounded-full border-2", lit ? "bg-coral border-coral" : "bg-abyss border-white/25")} />
+                    <span className={lit ? "text-coral" : "text-slate-300"}>{c}</span>
+                    <span className="text-mist text-[11.5px]">{lit ? "· notified" : i === 0 ? "· notified when the SLA is missed" : `· if still missed ${i * meta.policy.escalate_every_hours} h later`}</span>
                   </div>
                 );
               })}
             </div>
-            <div className="text-[11px] text-mist mt-1.5">The city sets every owner, SLA and step. The record protects officers who act on time.</div>
+            <div className="text-[12px] text-mist mt-2">The city sets every owner, SLA and step. Acting on time keeps the record clean: the trail protects officers who act.</div>
           </div>
           {esc.work_order && (
             <div className="grid grid-cols-2 gap-4">
               <div className="relative rounded-2xl bg-black/25 border border-white/8 p-4">
                 <div className="label mb-2 flex items-center gap-1.5"><FileText size={12} />Draft work order</div>
                 <pre className="text-[11.5px] whitespace-pre-wrap text-slate-200 font-mono leading-relaxed">{esc.work_order}</pre>
-                <button onClick={() => act("approve_work_order")} className="mt-3 w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[12.5px]">Approve (Executive Engineer)</button>
-                <AnimatePresence>{stamped.approve_work_order && <Stampy />}</AnimatePresence>
+                <button onClick={() => act("approve_work_order")} disabled={esc.approved.includes("work_order")} className="mt-3 w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[12.5px] disabled:opacity-50">Approve (Executive Engineer)</button>
+                <AnimatePresence>{esc.approved.includes("work_order") && <Stampy />}</AnimatePresence>
               </div>
               <div className="relative rounded-2xl bg-black/25 border border-white/8 p-4">
                 <div className="flex items-center justify-between mb-2"><div className="label flex items-center gap-1.5"><Languages size={12} />Draft boil-water advisory</div>
@@ -395,8 +442,8 @@ export function Escalation() {
                     {(["hi", "en"] as const).map((l) => <button key={l} onClick={() => setLang(l)} className={clsx("px-2 py-0.5", lang === l ? "bg-cyan/20 text-aqua" : "text-mist")}>{l === "hi" ? "हिंदी" : "EN"}</button>)}
                   </div></div>
                 <div className={clsx("text-[13px] whitespace-pre-wrap leading-relaxed text-slate-100", lang === "hi" && "font-hindi")} style={{ letterSpacing: 0 }}>{lang === "hi" ? hi : en}</div>
-                <button onClick={() => act("approve_advisory")} className="mt-3 w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[12.5px]">Approve ({meta.policy.advisory_approver})</button>
-                <AnimatePresence>{stamped.approve_advisory && <Stampy />}</AnimatePresence>
+                <button onClick={() => act("approve_advisory")} disabled={esc.approved.includes("advisory")} className="mt-3 w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[12.5px] disabled:opacity-50">Approve ({meta.policy.advisory_approver})</button>
+                <AnimatePresence>{esc.approved.includes("advisory") && <Stampy />}</AnimatePresence>
               </div>
               <div className="col-span-2 flex items-center gap-3">
                 <div className="text-[11.5px] text-mist flex items-center gap-2 flex-1"><Lock size={13} />JalKavach never sends anything. Approval is recorded; the officer sends through official channels.</div>
@@ -424,12 +471,12 @@ function describe(r: AuditRow): string {
   const p = r.payload as any;
   switch (r.action) {
     case "alert_opened": return `Alert opened by the engine · owner: ${p.owner}`;
-    case "escalated": return `Overdue ${p.overdue_hours} h → ${p.to} notified`;
+    case "escalated": return p.overdue_hours > 0 ? `SLA still missed after ${p.overdue_hours} h → ${p.to} notified` : `SLA missed → ${p.to} notified`;
     case "complaint_added": return `Citizen complaint added (${[...(p.colour ?? []), ...(p.odour ?? []), ...(p.symptoms ?? [])].join(", ") || "water quality"})`;
     case "field_test_added": return `Field test: ${p.mg_l ?? "?"} mg/L ${p.below_0_2 ? "(below 0.2)" : "(ok)"}`;
     case "drafts_created": return "Draft work order and advisory created";
     default:
-      if (r.action.startsWith("stage_done:")) return `${r.action.replace("stage_done:", "").replace("_", " ")} completed${p.on_time ? " · within SLA" : " · after SLA"}`;
+      if (r.action.startsWith("stage_done:")) return `${r.action.replace("stage_done:", "").replace("_", " ")} completed${p.on_time ? " · within SLA" : " · after SLA"}${p.reason_for_delay ? ` · reason: "${p.reason_for_delay}"` : ""}`;
       if (r.action.startsWith("approved:")) return `Approved: ${r.action.replace("approved:", "").replace("_", " ")}`;
       return r.action;
   }
@@ -451,10 +498,10 @@ export function Audit() {
         </div>
         <button onClick={tamper} className="px-4 py-2 rounded-xl bg-coral/15 text-coral hover:bg-coral/25 text-[12.5px]">Tamper test: edit entry #1 in a copy</button>
         <button onClick={() => setHashes((x) => !x)} className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[12.5px] flex items-center gap-1.5"><Hash size={13} />{hashes ? "Hide" : "Show"} hashes</button>
-        <div className="text-[11.5px] text-mist">Every action, by whom and when. It protects the officers who act on time.</div>
+        <div className="text-[12.5px] text-mist">Every action, by whom and when. Green dots are people; blue dots are the engine.</div>
       </div>
       {!data?.rows.length ? <div className="text-mist text-[13px]">No entries yet. Move the timeline to the alert.</div> : (
-        <div className="relative pl-8">
+        <div className="relative pl-8 max-w-[900px]">
           <div className="absolute left-[13px] top-2 bottom-2 w-0.5 bg-white/10" />
           {data.rows.map((r, i) => {
             const isBroken = broken !== null && r.seq >= broken;
@@ -466,10 +513,10 @@ export function Audit() {
                 <motion.div className={clsx("absolute -left-[26px] top-3.5 w-3.5 h-3.5 rounded-full border-2", isBroken ? "bg-coral border-coral" : human ? "bg-mint border-mint" : "bg-abyss border-aqua")}
                   animate={isBroken ? { scale: [1, 1.4, 1] } : {}} transition={{ delay: 0.12 * (r.seq - (broken ?? 0)) }} />
                 <div className={clsx("rounded-2xl px-4 py-3 border flex items-center gap-4", isBroken ? "border-coral/50 bg-coral/10" : "border-white/8 bg-black/20")}>
-                  <div className="w-28 shrink-0 text-[11.5px] text-mist num">#{r.seq} · {fmt(r.ts)}</div>
+                  <div className="w-32 shrink-0 text-[12px] text-mist num">#{r.seq} · {fmt(r.ts)}</div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[13.5px] text-slate-100">{describe(r)}</div>
-                    <div className="text-[11.5px] text-mist">{r.actor}</div>
+                    <div className={clsx("text-[12px]", human ? "text-mint/90" : "text-mist")}>{r.actor}</div>
                   </div>
                   {hashes && <div className={clsx("font-mono text-[10.5px] text-right", isBroken ? "text-coral" : "text-aqua/80")}>{r.hash.slice(0, 16)}…<br /><span className="text-mist/60">prev {r.prev_hash.slice(0, 10)}…</span></div>}
                 </div>
@@ -494,16 +541,16 @@ export function Evidence() {
   useEffect(() => { api.results().then(setRes); }, []);
   if (!meta) return null;
   const h = meta.headline;
-  const lines: Record<string, [string, string, number]> = { F: ["JalKavach", "#67e8f9", 3.2], H: ["Hospital-only baseline", "#ff6b6b", 2.6], C: ["Complaints only", "#3B5873", 1.2], CC: ["Complaint-count alarm", "#3B5873", 1.2], S: ["Pharmacy only", "#3B5873", 1.2], T: ["Field tests only", "#3B5873", 1.2] };
+  const lines: Record<string, [string, string, number]> = { F: ["JalKavach", "#67e8f9", 3.2], H: ["Hospital-only", "#ff6b6b", 2.6], C: ["Complaints only", "#3B5873", 1.2], CC: ["Complaint-count alarm", "#3B5873", 1.2], S: ["Pharmacy only", "#3B5873", 1.2], T: ["Field tests only", "#3B5873", 1.2] };
   const cdf = res ? Array.from({ length: 15 }, (_, x) => ({ x, ...Object.fromEntries(Object.entries(res.cdf).map(([k, v]) => [k, Math.round(100 * v[x])])) })) : [];
   return (
     <Shell title="Evidence · held-out simulation, pre-registered" icon={<Sparkles size={18} />} wide>
       <div className="grid grid-cols-4 gap-3">
         {[
           [`+${Math.round(100 * h.det_gain_vs_CC[0])} pts`, `more events caught within 21 days than a simple complaint-count alarm (95% CI +${Math.round(100 * h.det_gain_vs_CC[1])} to +${Math.round(100 * h.det_gain_vs_CC[2])})`],
-          [pct(h.top3_F), `true segment in the top 3, three days after the alert, when ingress follows pipe risk (complaints only: ${pct(h.top3_C)}; centroid: ${pct(h.top3_CC)}; ${h.top3_F_uniform !== null ? pct(h.top3_F_uniform) : "–"} when it doesn't)`],
+          [pct(h.top3_F), `true junction in the top 3, three days after the alert, when ingress follows pipe risk (complaints only: ${pct(h.top3_C)}; centroid: ${pct(h.top3_CC)}; ${h.top3_F_uniform !== null ? pct(h.top3_F_uniform) : "–"} when it doesn't)`],
           [`${h.lead_days[0]} days`, `median lead over a hospital-only baseline (95% CI ${h.lead_days[1]}–${h.lead_days[2]}; its misses counted at day 21)`],
-          [pct(h.coverage), `of 90% credible sets contained the true segment: conservative (${h.coverage_uniform !== null ? pct(h.coverage_uniform) : "–"} when ingress ignores pipe risk)`],
+          [pct(h.coverage), `of 90% credible sets contained the true junction: conservative (${h.coverage_uniform !== null ? pct(h.coverage_uniform) : "–"} when ingress ignores pipe risk)`],
         ].map(([v, l], i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="rounded-2xl bg-black/20 border border-white/5 p-4">
             <div className="font-display text-[38px] leading-none font-bold bg-gradient-to-r from-aqua to-cyan bg-clip-text text-transparent">{v}</div>
@@ -514,9 +561,9 @@ export function Evidence() {
       <div className="grid grid-cols-5 gap-4 mt-5">
         <div className="col-span-3 rounded-2xl bg-black/20 border border-white/5 p-4">
           <div className="label mb-1">Share of events detected, by days after onset · same false-alarm budget for every method</div>
-          <div className="h-[300px]">
+          <div className="h-[250px]">
             <ResponsiveContainer>
-              <LineChart data={cdf} margin={{ top: 14, right: 110, left: -12, bottom: 0 }}>
+              <LineChart data={cdf} margin={{ top: 14, right: 170, left: -12, bottom: 0 }}>
                 <CartesianGrid stroke="#14304c" strokeDasharray="3 3" />
                 <XAxis dataKey="x" stroke="#8fb3d1" fontSize={11} tickFormatter={(x) => `${x}d`} />
                 <YAxis stroke="#8fb3d1" fontSize={11} unit="%" domain={[0, 100]} />
@@ -530,7 +577,7 @@ export function Evidence() {
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="text-[11px] text-mist">Grey lines: complaints only, complaint-count alarm, pharmacy only, field tests only. Main set: n = {h.n_main} detected events (of {h.n_scenarios.toLocaleString("en-IN")} scenarios incl. no-event runs).</div>
+          <div className="text-[12px] text-mist leading-snug">Grey lines: complaints only, complaint-count alarm, pharmacy only, field tests only. Budget: ≤1 false alarm per ward per quarter. At a stricter monthly budget the gain over the complaint-count alarm is {h.det_gain_vs_CC_monthly[0] >= 0 ? "+" : ""}{Math.round(100 * h.det_gain_vs_CC_monthly[0])} pts [{Math.round(100 * h.det_gain_vs_CC_monthly[1])}, {Math.round(100 * h.det_gain_vs_CC_monthly[2])}]{h.det_gain_vs_CC_monthly[1] <= 0 ? ", not significant" : ""}. Localisation: n = {h.n_main} detected main-set events; {h.n_scenarios.toLocaleString("en-IN")} scenarios in all, incl. no-event runs and sweeps.</div>
         </div>
         <div className="col-span-2 space-y-3">
           <div className="rounded-2xl bg-black/20 border border-white/5 p-4">
@@ -548,12 +595,22 @@ export function Evidence() {
             <ul className="text-[12.5px] text-amber/90 space-y-1.5 list-disc ml-4">
               <li>Fusion does not alarm <i>earlier</i> than complaints alone; it catches <i>more</i> events and narrows <i>where</i>.</li>
               <li>Intermittent-supply prior vs. a 24×7 prior: not significant.</li>
-              <li>Information-gain test routing ≈ random.</li>
+              <li>Larger wards localise less well: {pct(h.top3_F)} top-3 here ({h.n_junctions} junctions), {res ? <> vs. {pct(res.net3.top3)} on the smaller Net3</> : null}.</li>
+              <li>Information-gain test routing ≈ random (median {h.routing.info_gain.median} vs {h.routing.random.median} tests).</li>
               <li>Lower detection where people report less.</li>
               <li>Everything here is simulated, not field data.</li>
             </ul>
           </div>
         </div>
+      </div>
+      <div className="mt-4 rounded-2xl bg-black/20 border border-white/5 p-4">
+        <div className="label mb-2">Why days matter · Indore, winter 2025–26 (press reports)</div>
+        <div className="flex items-center gap-2 text-[12.5px] text-slate-200 flex-wrap">
+          {["Residents complain of smelly, discoloured tap water for weeks¹", "Diarrhoea and vomiting surge; hospitals fill²", "Lab tests confirm sewage in a leaking pipeline³", "Officials act after people have died²"].map((x, i, a) => (
+            <span key={i} className="flex items-center gap-2"><span className={clsx("rounded-xl px-3 py-1.5 border", i === 0 ? "border-amber/40 text-amber" : i === a.length - 1 ? "border-coral/40 text-coral" : "border-white/10")}>{x}</span>{i < a.length - 1 && <span className="text-mist">→</span>}</span>
+          ))}
+        </div>
+        <div className="text-[11.5px] text-mist mt-2">¹ ThePrint; Free Press Journal, Jan 2026. ² Deccan Herald; Business Today, Jan 2026 (reported deaths vary by source). ³ Deccan Herald, Jan 2026. JalKavach is built for the gap between the first and second boxes.</div>
       </div>
       {res && <div className="mt-4 text-[11.5px] text-mist">Second network (EPANET Net3): lead {res.net3.lead_F_vs_H[0]} days [{res.net3.lead_F_vs_H[1]}–{res.net3.lead_F_vs_H[2]}]. Full tables: results/RESULTS.md.</div>}
     </Shell>
@@ -561,36 +618,71 @@ export function Evidence() {
 }
 
 /* ------------------------------------------------------------------- vision */
+function WardBoard() {
+  const { state } = useStore();
+  const col = state?.status === "ALERT" ? "#ff6b6b" : "#34d399";
+  return (
+    <div className="rounded-2xl bg-black/20 border border-white/5 p-4">
+      <div className="label mb-2">What the Commissioner could see · illustration</div>
+      <div className="grid gap-[5px]" style={{ gridTemplateColumns: "repeat(17, minmax(0, 1fr))" }}>
+        {Array.from({ length: 85 }, (_, i) => (
+          i === 0
+            ? <motion.div key={i} title="Ward 00 · live demo" className="aspect-square rounded-[4px]" style={{ background: col, boxShadow: `0 0 12px ${col}` }}
+                animate={{ opacity: [1, 0.6, 1] }} transition={{ duration: 1.6, repeat: Infinity }} />
+            : <div key={i} title={`Ward ${String(i).padStart(2, "0")} · not connected`} className="aspect-square rounded-[4px] border border-white/10 bg-white/[.03]" />
+        ))}
+      </div>
+      <div className="text-[12px] text-mist mt-2 leading-snug">One tile per ward. Only Ward 00 (this demo) is live; the other 84 are empty until a city connects them. Each tile would carry status, the stage clock and the last field test.</div>
+    </div>
+  );
+}
+
 export function Vision() {
   const steps = [
     { k: "1 ward", t: "Pilot", d: "One ward, CSR-funded, no procurement. The utility's network map and complaint log replace the synthetic layers.", n: "₹12 L onboarding" },
-    { k: "85 wards", t: "Indore", d: "The city's own clock on every ward. Indore Model 2.0: Swachh → Surakshit.", n: "≈ ₹1.3–1.7 cr / yr" },
+    { k: "85 wards", t: "Indore", d: "The city's own clock on every ward, from Swachh to Surakshit.", n: "≈ ₹1.3–1.7 cr / yr" },
     { k: "Simhastha 2028", t: "Ujjain", d: "Temporary networks for crores of pilgrims: the template is ready to pilot.", n: "mela-grid template" },
-    { k: "~400 ULBs", t: "Madhya Pradesh", d: "Put the state's Amrut Mitra field tests on one map: 80,976 tests and counting, every one of them.", n: "state rate contract" },
-    { k: "AMRUT cities", t: "India 2036", d: "Tap-water safety as visible to a city as its air quality, published at the city's discretion. Open engine, built to the Digital Public Goods standard.", n: "open core + managed service" },
+    { k: "~400 ULBs", t: "Madhya Pradesh", d: "Put the state's Amrut Mitra field tests on one map (80,976 reported by Jan 2026).", n: "state rate contract" },
+    { k: "AMRUT cities", t: "India 2036", d: "Tap-water safety as visible to a city as its air quality, published at the city's discretion.", n: "open core + managed service" },
   ];
   return (
     <Shell title="2036 · from one ward to every tap" icon={<Sparkles size={18} />} wide>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-5 rounded-2xl border border-cyan/30 bg-cyan/5 p-5">
-        <div className="label text-aqua">Message for the 2036 Capsule</div>
-        <div className="font-display text-xl mt-2 text-slate-100">"Dear 2036: we built this so that no Indian city ever again learns its water is contaminated from a hospital bed. If your city knows before its hospitals do, it worked."</div>
-        <div className="font-hindi text-[15px] text-[#FFB27A] mt-3" style={{ letterSpacing: 0 }}>अहिल्याबाई ने पानी पहुँचाया; हम उसे सुरक्षित रखेंगे।</div>
-      </motion.div>
-      <div className="relative">
-        <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-aqua via-cyan to-azure opacity-50" />
-        {steps.map((s, i) => (
-          <motion.div key={s.k} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 * i }} className="relative flex gap-5 mb-4">
-            <motion.div className="w-14 h-14 rounded-2xl grid place-items-center font-display font-bold text-abyss shrink-0 z-10"
-              style={{ background: `linear-gradient(135deg, #67e8f9, ${["#22a6f2", "#2b8cf0", "#3a6ff0", "#2f5be8", "#2546e8"][i]})` }}
-              initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.15 * i + 0.1, type: "spring" }}>{i + 1}</motion.div>
-            <div className="flex-1 rounded-2xl bg-black/20 border border-white/5 p-4">
-              <div className="flex items-baseline gap-3"><div className="font-display text-xl font-semibold">{s.t}</div><div className="text-aqua text-[13px]">{s.k}</div><div className="flex-1" /><div className="text-[12px] text-mist">{s.n}</div></div>
-              <div className="text-[13px] text-slate-300 mt-1">{s.d}</div>
-            </div>
+      <div className="grid grid-cols-5 gap-5">
+        <div className="col-span-3 space-y-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-cyan/30 bg-cyan/5 p-5">
+            <div className="label text-aqua">Message for the 2036 Capsule</div>
+            <div className="font-display text-[19px] mt-2 text-slate-100 leading-snug">“Dear 2036: we built this so a city hears it from its own signals, not from a hospital bed. If your city knows before its hospitals do, it worked.”</div>
+            <div className="font-hindi text-[16px] text-[#FFB27A] mt-3" style={{ letterSpacing: 0 }}>लोकमाता देवी अहिल्याबाई ने घाट और कुएँ बनवाए; हम हर नल का पानी सुरक्षित रखेंगे।</div>
           </motion.div>
-        ))}
+          <div className="relative">
+            <div className="absolute left-[23px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-aqua via-cyan to-azure opacity-50" />
+            {steps.map((s, i) => (
+              <motion.div key={s.k} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 * i }} className="relative flex gap-4 mb-2.5">
+                <motion.div className="w-12 h-12 rounded-2xl grid place-items-center font-display font-bold text-abyss shrink-0 z-10"
+                  style={{ background: `linear-gradient(135deg, #67e8f9, ${["#22a6f2", "#2b8cf0", "#3a6ff0", "#2f5be8", "#2546e8"][i]})` }}
+                  initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.12 * i + 0.1, type: "spring" }}>{i + 1}</motion.div>
+                <div className="flex-1 rounded-2xl bg-black/20 border border-white/5 px-4 py-2.5">
+                  <div className="flex items-baseline gap-3"><div className="font-display text-[17px] font-semibold">{s.t}</div><div className="text-aqua text-[13px]">{s.k}</div><div className="flex-1" /><div className="text-[12px] text-mist">{s.n}</div></div>
+                  <div className="text-[13px] text-slate-300 mt-0.5">{s.d}</div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+        <div className="col-span-2 space-y-4">
+          <WardBoard />
+          <div className="rounded-2xl border border-[#FF9F43]/30 bg-[#FF9F43]/5 p-4">
+            <div className="font-hindi text-[18px] text-[#FFB27A]" style={{ letterSpacing: 0 }}>स्वच्छता में नंबर 1; अब सुरक्षा में भी।</div>
+            <div className="font-display text-[15px] text-slate-200 mt-1">From <b className="text-mint">Swachh</b> to <b className="text-aqua">Surakshit</b></div>
+          </div>
+          <div className="rounded-2xl bg-black/20 border border-white/5 p-4 text-[12.5px] text-slate-300 space-y-1.5">
+            <div className="label mb-1">Pilot readiness</div>
+            <div>Needs from the city: the ward's pipe map, a complaint-log export, and an SLA config. That is all.</div>
+            <div>Engine: open source (Apache-2.0), built toward the Digital Public Goods standard. No patents.</div>
+            <div className="text-aqua">Our ask: that the city names the first pilot ward.</div>
+          </div>
+        </div>
       </div>
-      <div className="text-[11.5px] text-mist mt-2">Our ask: that the city names the first pilot ward.</div>
     </Shell>
   );
 }

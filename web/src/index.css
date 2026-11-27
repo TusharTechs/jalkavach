@@ -17,7 +17,7 @@
   --color-coral: #ff6b6b;
   --color-amber: #f5b544;
   --color-mint: #34d399;
-  --color-mist: #8fb3d1;
+  --color-mist: #9fb8cf;
 }
 
 :root { color-scheme: dark; }
@@ -30,7 +30,11 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
   border: 1px solid rgba(120, 190, 255, 0.12);
   box-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
-.label { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-mist); font-weight: 600; }
+.label { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-mist); font-weight: 600; }
+/* Devanagari has no case and must not be tracked out */
+:lang(hi) .label, .label:lang(hi) { letter-spacing: 0; text-transform: none; font-size: 12.5px; font-family: var(--font-hindi); }
+:lang(hi) body { font-family: var(--font-sans), var(--font-hindi); }
+.hi { font-family: var(--font-hindi); letter-spacing: 0; }
 .num { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
 .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: #1d3a59; border-radius: 6px; }
@@ -41,3 +45,9 @@ body { overflow: hidden; -webkit-font-smoothing: antialiased; }
 @keyframes ping-soft { 0% { transform: scale(.6); opacity: .9 } 100% { transform: scale(2.4); opacity: 0 } }
 .ping-soft { animation: ping-soft 1.8s cubic-bezier(.2,.6,.3,1) infinite; }
 @keyframes sweep { 0% { top: 0% } 100% { top: 100% } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ping-soft { animation: none; }
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}
+:focus-visible { outline: 2px solid var(--color-aqua); outline-offset: 2px; border-radius: 10px; }

@@ -11,106 +11,106 @@ Scenarios: 720 event, 400 no-event.
 
 | Method | Median days from onset to alarm | Detected within 21 days |
 |---|---|---|
-| Fusion (JalKavach) | 2.0 [2.0–3.0] | 85% [80–89] |
-| Complaints only | 2.0 [2.0–3.0] | 81% [76–86] |
-| Field tests only | 6.0 [5.0–8.0] | 68% [62–74] |
-| Pharmacy only | 7.5 [6.0–10.0] | 66% [60–72] |
-| Hospital admissions (baseline) | 11.0 [11.0–12.0] | 50% [44–56] |
-| Complaint-count exceedance (baseline) | 3.0 [2.0–4.0] | 69% [63–75] |
-| Pharmacy exceedance (baseline) | 11.0 [11.0–12.0] | 45% [39–52] |
-| Fusion, 24x7 prior | 2.0 [2.0–3.0] | 85% [80–89] |
-| Fusion, uniform prior | 2.0 [2.0–3.0] | 84% [80–89] |
-| Fusion, 5 psi prior | 2.0 [2.0–3.0] | 86% [82–90] |
-| Fusion, 15 psi prior | 2.0 [2.0–3.0] | 85% [80–90] |
+| Fusion (JalKavach) | 2.0 [2.0–3.0] | 90% [87–94] |
+| Complaints only | 2.0 [2.0–3.0] | 90% [85–93] |
+| Field tests only | 8.5 [6.5–11.0] | 62% [56–68] |
+| Pharmacy only | 7.0 [5.5–8.0] | 70% [64–75] |
+| Hospital admissions (baseline) | 12.0 [11.0–12.0] | 44% [38–50] |
+| Complaint-count exceedance (baseline) | 3.0 [3.0–4.0] | 68% [62–74] |
+| Pharmacy exceedance (baseline) | 11.0 [8.0–12.0] | 49% [42–55] |
+| Fusion, 24x7 prior | 3.0 [2.0–3.0] | 89% [85–93] |
+| Fusion, uniform prior | 3.0 [2.0–3.0] | 90% [85–93] |
+| Fusion, 5 psi prior | 2.0 [2.0–3.0] | 90% [86–93] |
+| Fusion, 15 psi prior | 2.0 [2.0–3.0] | 90% [87–94] |
 
-- **Lead of fusion over the hospital-only baseline (median, paired):** 5.0 [4.0–6.0] days. Mean: 5.7 [5.0–6.4]. Events the hospital baseline never caught within 21 days: 50%; fusion: 15% (counted as day 21).
-- **Lead over complaint-count exceedance:** 0.0 [0.0–0.0] days. Detection-rate difference (fusion minus complaint-count exceedance, paired): 16% [11–21].
+- **Lead of fusion over the hospital-only baseline (median, paired):** 7.0 [6.0–8.0] days. Mean: 6.8 [6.0–7.5]. Events the hospital baseline never caught within 21 days: 56%; fusion: 10% (counted as day 21).
+- **Lead over complaint-count exceedance:** 0.0 [0.0–0.0] days. Detection-rate difference (fusion minus complaint-count exceedance, paired): 22% [16–28].
 - **Fusion vs. the best single signal (Complaints only):** 0.0 [0.0–0.0] days earlier (median, paired).
 
 ### Detection at ≤1 false alarm per ward per month
 
 | Method | Median days from onset to alarm | Detected within 21 days |
 |---|---|---|
-| Fusion (JalKavach) | 1.0 [1.0–2.0] | 91% [87–95] |
-| Complaints only | 1.0 [1.0–2.0] | 87% [82–91] |
-| Field tests only | 5.0 [4.0–6.0] | 76% [70–81] |
+| Fusion (JalKavach) | 1.0 [1.0–2.0] | 94% [91–97] |
+| Complaints only | 1.0 [1.0–2.0] | 92% [89–95] |
+| Field tests only | 3.0 [2.0–3.0] | 89% [85–92] |
 | Pharmacy only | 3.0 [3.0–4.0] | 86% [81–90] |
-| Hospital admissions (baseline) | 5.0 [5.0–6.5] | 80% [75–85] |
-| Complaint-count exceedance (baseline) | 2.0 [2.0–2.0] | 88% [84–92] |
-| Pharmacy exceedance (baseline) | 5.0 [4.0–5.0] | 80% [75–85] |
-| Fusion, 24x7 prior | 1.0 [1.0–2.0] | 90% [85–93] |
-| Fusion, uniform prior | 1.0 [1.0–2.0] | 91% [88–95] |
-| Fusion, 5 psi prior | 1.5 [1.0–2.0] | 91% [88–95] |
-| Fusion, 15 psi prior | 1.0 [1.0–2.0] | 90% [87–94] |
+| Hospital admissions (baseline) | 6.0 [5.0–7.0] | 76% [71–82] |
+| Complaint-count exceedance (baseline) | 2.0 [1.0–2.0] | 92% [89–96] |
+| Pharmacy exceedance (baseline) | 4.0 [4.0–5.0] | 77% [72–82] |
+| Fusion, 24x7 prior | 1.0 [1.0–2.0] | 93% [90–96] |
+| Fusion, uniform prior | 1.0 [1.0–2.0] | 94% [91–97] |
+| Fusion, 5 psi prior | 1.0 [1.0–2.0] | 94% [91–97] |
+| Fusion, 15 psi prior | 1.0 [1.0–2.0] | 94% [91–97] |
 
-- **Lead of fusion over the hospital-only baseline (median, paired):** 4.0 [3.0–4.0] days. Mean: 3.7 [2.9–4.4]. Events the hospital baseline never caught within 21 days: 20%; fusion: 9% (counted as day 21).
-- **Lead over complaint-count exceedance:** 0.0 [0.0–0.0] days. Detection-rate difference (fusion minus complaint-count exceedance, paired): 3% [-1–7].
+- **Lead of fusion over the hospital-only baseline (median, paired):** 4.0 [3.0–5.0] days. Mean: 4.6 [3.9–5.4]. Events the hospital baseline never caught within 21 days: 24%; fusion: 6% (counted as day 21).
+- **Lead over complaint-count exceedance:** 0.0 [0.0–0.0] days. Detection-rate difference (fusion minus complaint-count exceedance, paired): 2% [-2–5].
 - **Fusion vs. the best single signal (Complaints only):** 0.0 [0.0–0.0] days earlier (median, paired).
 
-### Localisation (true location from the physical risk model; n=204 detected events)
+### Localisation (true location from the physical risk model; n=217 detected events)
 
 | Method | Top-3 at alarm | Top-3 three days later |
 |---|---|---|
-| Fusion (JalKavach) | 34% [28–41] | 57% [50–64] |
-| Fusion, 24x7 prior | 34% [28–41] | 56% [50–63] |
-| Fusion, uniform prior | 33% [27–40] | 54% [48–61] |
-| Fusion, 5 psi prior | 35% [28–41] | 56% [50–63] |
-| Fusion, 15 psi prior | 35% [28–42] | 59% [52–65] |
-| Complaints only | 25% [19–31] | 43% [36–50] |
-| Complaint centroid (baseline) | 11% [6–15] | 13% [8–18] |
+| Fusion (JalKavach) | 22% [17–28] | 39% [33–46] |
+| Fusion, 24x7 prior | 21% [16–26] | 36% [29–42] |
+| Fusion, uniform prior | 20% [15–25] | 35% [29–42] |
+| Fusion, 5 psi prior | 18% [13–23] | 35% [28–41] |
+| Fusion, 15 psi prior | 22% [17–28] | 40% [34–46] |
+| Complaints only | 18% [13–23] | 26% [21–32] |
+| Complaint centroid (baseline) | 3% [1–6] | 6% [3–10] |
 
-- **Ablation 1, intermittent prior minus 24x7 prior (top-3, 3 days after alarm):** 0.010 [-0.034–0.054]
-- **Intermittent prior minus uniform prior:** 0.034 [-0.025–0.093]
-- **Fusion minus complaints-only (top-3, 3 days after alarm):** 0.142 [0.078–0.206]
-- **Fusion minus complaint centroid (top-3, 3 days after alarm):** 0.446 [0.373–0.520]
-- **Coverage of the 90% credible set at alarm:** 97% [94–99]
+- **Ablation 1, intermittent prior minus 24x7 prior (top-3, 3 days after alarm):** 0.032 [-0.005–0.074]
+- **Intermittent prior minus uniform prior:** 0.037 [-0.009–0.083]
+- **Fusion minus complaints-only (top-3, 3 days after alarm):** 0.129 [0.065–0.194]
+- **Fusion minus complaint centroid (top-3, 3 days after alarm):** 0.327 [0.263–0.392]
+- **Coverage of the 90% credible set at alarm:** 93% [89–96]
 
-### Localisation (true location uniform; n=105 detected events)
+### Localisation (true location uniform; n=98 detected events)
 
 | Method | Top-3 at alarm | Top-3 three days later |
 |---|---|---|
-| Fusion (JalKavach) | 22% [14–30] | 48% [38–57] |
-| Fusion, 24x7 prior | 25% [16–33] | 50% [41–60] |
-| Fusion, uniform prior | 26% [18–34] | 54% [45–64] |
-| Fusion, 5 psi prior | 30% [21–38] | 49% [39–58] |
-| Fusion, 15 psi prior | 22% [14–30] | 47% [37–56] |
-| Complaints only | 19% [12–27] | 26% [17–34] |
-| Complaint centroid (baseline) | 7% [3–12] | 13% [8–20] |
+| Fusion (JalKavach) | 19% [12–28] | 43% [34–53] |
+| Fusion, 24x7 prior | 15% [8–22] | 43% [34–53] |
+| Fusion, uniform prior | 24% [16–33] | 41% [31–50] |
+| Fusion, 5 psi prior | 15% [8–22] | 38% [29–48] |
+| Fusion, 15 psi prior | 12% [6–18] | 44% [35–54] |
+| Complaints only | 15% [9–22] | 33% [23–42] |
+| Complaint centroid (baseline) | 6% [2–11] | 5% [1–10] |
 
-- **Ablation 1, intermittent prior minus 24x7 prior (top-3, 3 days after alarm):** -0.029 [-0.076–0.019]
-- **Intermittent prior minus uniform prior:** -0.067 [-0.143–0.000]
-- **Fusion minus complaints-only (top-3, 3 days after alarm):** 0.219 [0.133–0.314]
-- **Fusion minus complaint centroid (top-3, 3 days after alarm):** 0.343 [0.229–0.457]
+- **Ablation 1, intermittent prior minus 24x7 prior (top-3, 3 days after alarm):** 0.000 [-0.071–0.071]
+- **Intermittent prior minus uniform prior:** 0.020 [-0.051–0.092]
+- **Fusion minus complaints-only (top-3, 3 days after alarm):** 0.102 [0.010–0.194]
+- **Fusion minus complaint centroid (top-3, 3 days after alarm):** 0.378 [0.276–0.470]
 - **Coverage of the 90% credible set at alarm:** 96% [92–99]
 
-### Ablation 3: field-test routing after an alarm (73 of 106 alarmed events where the truth was not already in the top 3; 2 routed tests/day for up to 10 days)
+### Ablation 3: field-test routing after an alarm (76 of 108 alarmed events where the truth was not already in the top 3; 2 routed tests/day for up to 10 days)
 
 | Policy | Reached top 3 | Tests to top 3 (median; 21 = never) | Tests to top 3 (mean) |
 |---|---|---|---|
-| info_gain | 73% | 6.0 [4.0–10.0] | 10.0 [8.3–11.9] |
-| random | 63% | 10.0 [8.0–18.0] | 12.3 [10.5–14.0] |
-| nearest | 67% | 10.0 [6.0–14.0] | 11.7 [10.0–13.4] |
+| info_gain | 76% | 6.0 [4.0–7.0] | 8.9 [7.2–10.5] |
+| random | 75% | 6.0 [4.0–8.0] | 9.4 [7.7–11.1] |
+| nearest | 75% | 6.0 [4.0–8.0] | 9.1 [7.3–10.8] |
 
 ### Equity: detection by reporting propensity of the exposed population
 
 | Tier | Fusion median days to alarm | Fusion detected | Complaints-only median days |
 |---|---|---|---|
-| low | 5.0 [3.0–7.0] | 74% | 4.5 [2.5–10.5] |
-| mid | 2.0 [1.0–2.0] | 96% | 1.0 [1.0–2.0] |
-| high | 2.0 [1.5–3.5] | 85% | 2.0 [1.0–2.5] |
+| low | 3.0 [2.0–4.0] | 84% | 4.0 [2.0–5.0] |
+| mid | 2.0 [1.0–3.0] | 94% | 1.0 [1.0–2.0] |
+| high | 3.0 [2.0–3.0] | 94% | 2.5 [2.0–4.0] |
 
 ### Sensitivity sweeps (generator fixed at the value; engine unchanged)
 
 | Setting | Fusion median days to alarm | Detected | Top-3 three days after alarm |
 |---|---|---|---|
-| complaint_delay_mean=0.5 | 1.0 [1.0–2.0] | 93% | 46% [34–59] |
-| complaint_delay_mean=1.5 | 2.0 [1.0–4.0] | 83% | 66% [54–78] |
-| complaint_delay_mean=3.0 | 3.0 [2.0–4.0] | 92% | 62% [49–75] |
-| geocode_radius_m=120.0 | 3.0 [2.0–5.0] | 80% | 56% [42–71] |
-| geocode_radius_m=250.0 | 2.0 [1.0–2.5] | 85% | 29% [18–43] |
-| geocode_radius_m=60.0 | 2.0 [1.0–3.5] | 90% | 70% [59–83] |
+| complaint_delay_mean=0.5 | 2.0 [1.0–2.5] | 93% | 45% [32–57] |
+| complaint_delay_mean=1.5 | 3.0 [2.0–3.5] | 85% | 41% [27–55] |
+| complaint_delay_mean=3.0 | 4.0 [3.0–6.0] | 83% | 44% [30–58] |
+| geocode_radius_m=120.0 | 2.0 [1.0–3.0] | 90% | 50% [37–65] |
+| geocode_radius_m=250.0 | 3.0 [2.0–4.0] | 90% | 20% [11–31] |
+| geocode_radius_m=60.0 | 3.0 [2.0–4.0] | 92% | 60% [47–73] |
 
-Failures (missed, or truth outside the top 3 three days after alarm): 123 scenarios, listed in `results/failures_ward.csv`.
+Failures (missed, or truth outside the top 3 three days after alarm): 155 scenarios, listed in `results/failures_ward.csv`.
 
 ## Topology: net3
 
@@ -120,11 +120,11 @@ Scenarios: 150 event, 250 no-event.
 
 | Method | Median days from onset to alarm | Detected within 21 days |
 |---|---|---|
-| Fusion (JalKavach) | 1.0 [1.0–2.0] | 90% [85–95] |
-| Complaints only | 1.0 [1.0–1.5] | 90% [85–95] |
+| Fusion (JalKavach) | 1.0 [1.0–2.0] | 90% [85–94] |
+| Complaints only | 1.0 [1.0–1.0] | 90% [85–95] |
 | Field tests only | 5.0 [4.0–8.0] | 72% [65–79] |
 | Pharmacy only | 3.0 [3.0–4.0] | 85% [79–91] |
-| Hospital admissions (baseline) | 9.0 [7.0–11.0] | 61% [53–68] |
+| Hospital admissions (baseline) | 9.0 [7.0–11.0] | 61% [52–68] |
 | Complaint-count exceedance (baseline) | 1.0 [1.0–2.0] | 86% [80–91] |
 | Pharmacy exceedance (baseline) | 5.0 [4.0–6.5] | 67% [59–74] |
 
@@ -138,14 +138,14 @@ Scenarios: 150 event, 250 no-event.
 |---|---|---|
 | Fusion (JalKavach) | 1.0 [0.0–1.0] | 96% [93–99] |
 | Complaints only | 1.0 [0.0–1.0] | 93% [89–97] |
-| Field tests only | 2.0 [2.0–3.0] | 86% [80–91] |
-| Pharmacy only | 2.0 [1.0–2.0] | 95% [92–99] |
+| Field tests only | 2.0 [2.0–3.0] | 86% [81–91] |
+| Pharmacy only | 2.0 [1.0–2.0] | 95% [92–98] |
 | Hospital admissions (baseline) | 5.0 [4.0–6.0] | 85% [79–90] |
 | Complaint-count exceedance (baseline) | 1.0 [1.0–1.0] | 97% [95–99] |
-| Pharmacy exceedance (baseline) | 3.0 [3.0–3.5] | 89% [83–93] |
+| Pharmacy exceedance (baseline) | 3.0 [3.0–4.0] | 89% [83–93] |
 
-- **Lead of fusion over the hospital-only baseline (median, paired):** 4.0 [3.5–4.5] days. Mean: 4.8 [4.0–5.7]. Events the hospital baseline never caught within 21 days: 15%; fusion: 4% (counted as day 21).
-- **Lead over complaint-count exceedance:** 0.0 [0.0–0.0] days. Detection-rate difference (fusion minus complaint-count exceedance, paired): -1% [-5–1].
+- **Lead of fusion over the hospital-only baseline (median, paired):** 4.0 [3.0–4.0] days. Mean: 4.8 [4.0–5.6]. Events the hospital baseline never caught within 21 days: 15%; fusion: 4% (counted as day 21).
+- **Lead over complaint-count exceedance:** 0.0 [0.0–0.0] days. Detection-rate difference (fusion minus complaint-count exceedance, paired): -1% [-5–2].
 - **Fusion vs. the best single signal (Complaints only):** 0.0 [0.0–0.0] days earlier (median, paired).
 
 ### Localisation (true location from the physical risk model; n=135 detected events)
@@ -153,8 +153,8 @@ Scenarios: 150 event, 250 no-event.
 | Method | Top-3 at alarm | Top-3 three days later |
 |---|---|---|
 | Fusion (JalKavach) | 38% [30–46] | 68% [60–76] |
-| Complaints only | 39% [30–47] | 61% [53–70] |
-| Complaint centroid (baseline) | 11% [6–17] | 13% [7–19] |
+| Complaints only | 39% [31–47] | 61% [53–70] |
+| Complaint centroid (baseline) | 11% [6–16] | 13% [7–19] |
 
 ### Equity: detection by reporting propensity of the exposed population
 

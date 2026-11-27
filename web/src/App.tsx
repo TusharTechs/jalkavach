@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { Component, useEffect, useRef, type ReactNode } from "react";
 import MapView from "./components/MapView";
 import Intro, { Prologue } from "./components/Intro";
@@ -8,6 +8,8 @@ import { useStore, type View } from "./store";
 import { Mark } from "./components/Logo";
 import { StoryCaption, useStory } from "./components/Story";
 import { Clapperboard } from "lucide-react";
+import { useT } from "./i18n";
+import { useHudCanvas } from "./fit";
 
 const hasWebGL2 = (() => { try { return !!document.createElement("canvas").getContext("webgl2"); } catch { return false; } })();
 
@@ -27,8 +29,27 @@ class MapBoundary extends Component<{ children: ReactNode }, { err: boolean }> {
 const KEYVIEW: Record<string, View> = { "1": "command", "2": "intake", "3": "escalation", "4": "audit", "5": "evidence", "6": "vision" };
 
 export default function App() {
-  const { boot, view, net, state, stage } = useStore();
+  const { boot, view, net, state, lang, alertAt } = useStore();
+  const t = useT();
   const story = useStory();
+  const hudc = useHudCanvas();
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+  // a soft two-note tone when an alert opens (after any user gesture; silent otherwise)
+  useEffect(() => {
+    if (!alertAt) return;
+    try {
+      const ctx = new AudioContext();
+      [[660, 0], [880, 0.18]].forEach(([f, d]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = f; o.type = "sine";
+        g.gain.setValueAtTime(0.0001, ctx.currentTime + d);
+        g.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + d + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + d + 0.6);
+        o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + d); o.stop(ctx.currentTime + d + 0.65);
+      });
+      setTimeout(() => ctx.close(), 1500);
+    } catch { /* audio optional */ }
+  }, [alertAt]);
   const storyRef = useRef(story);
   storyRef.current = story;
   useEffect(() => { boot(); }, []);
@@ -52,6 +73,7 @@ export default function App() {
   const ready = !!net && !!state;
   const hud = ready && view !== "intro" && view !== "prologue";
   return (
+    <MotionConfig reducedMotion="user">
     <div className="relative w-full h-full overflow-hidden">
       {ready && <MapBoundary><MapView /></MapBoundary>}
       <AnimatePresence>
@@ -66,10 +88,11 @@ export default function App() {
         {ready && view === "prologue" && <Prologue key="prologue" />}
       </AnimatePresence>
       {hud && <AlertVignette />}
-      {hud && <StoryCaption on={story.on} caption={story.caption} stop={story.stop} />}
       {hud && (
-        <div className="absolute inset-0 pointer-events-none" style={stage ? { zoom: 1.12 } as React.CSSProperties : undefined}>
+        <div className="absolute left-0 top-0 pointer-events-none"
+          style={{ width: hudc.w, height: hudc.h, transform: `scale(${hudc.s})`, transformOrigin: "0 0", ["--hud-h" as string]: `${hudc.h}px`, ["--hud-w" as string]: `${hudc.w}px` } as React.CSSProperties}>
           <div className="absolute inset-0 [&>*]:pointer-events-auto">
+            <StoryCaption on={story.on} caption={story.caption} stop={story.stop} voice={story.voice} setVoice={story.setVoice} />
             <TopBar />
             <SignalsPanel />
             <AnimatePresence mode="wait">
@@ -83,7 +106,7 @@ export default function App() {
             <Legend />
             {!story.on && view === "command" && (
               <button onClick={story.start} title="Story mode (P)" className="absolute left-1/2 -translate-x-1/2 top-[124px] glass rounded-full px-4 py-2 text-[13px] text-aqua flex items-center gap-2 hover:bg-cyan/10">
-                <Clapperboard size={15} />Play the story (P)
+                <Clapperboard size={15} aria-hidden />{t("Play the story (P)")}
               </button>
             )}
             <MapControls />
@@ -94,5 +117,6 @@ export default function App() {
         </div>
       )}
     </div>
+    </MotionConfig>
   );
 }

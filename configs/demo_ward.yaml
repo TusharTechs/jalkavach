@@ -1,7 +1,7 @@
 # Demo ward configuration. Streets: OpenStreetMap (real). Pipes, sewers, ages: synthetic (seeded).
 name: demo_ward
 label: "Ward 00 · Demo Nagar, Indore (real OSM streets; synthetic pipe network)"
-center: [22.7079, 75.8505]   # lat, lon. A neutral residential area, not linked to any outbreak
+center: [22.7610, 75.9190]   # lat, lon. Nipania (Tulsi Nagar area): a post-2000 residential colony, not linked to any reported event
 dist_m: 450
 network_type: drive_service
 seed: 7

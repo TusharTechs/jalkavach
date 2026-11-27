@@ -84,6 +84,7 @@ class Alert:
     escalated_to: list[str] = field(default_factory=list)
     work_order: str | None = None
     advisory: str | None = None
+    opened_label: str = ""                 # e.g. "Day 8, 18:00 (simulation clock)"
 
 
 class EscalationEngine:
@@ -134,7 +135,7 @@ class EscalationEngine:
         new = []
         for k, who in enumerate(chain):
             at = due + timedelta(hours=k * every)
-            if at > now:
+            if at >= now:          # at the due moment itself the owner still has the clock
                 break
             if who in a.escalated_to:
                 continue
@@ -153,12 +154,14 @@ class EscalationEngine:
         if a.stage_index < len(self.stages) - 1:
             a.stage_index += 1
             a.stage_started = now
+            a.escalated_to = []    # each stage has its own clock and its own ladder
 
-    def confirm(self, a: Alert, actor: str, now: datetime, node_labels: list[str]) -> None:
+    def confirm(self, a: Alert, actor: str, now: datetime, node_labels: list[str],
+                node_labels_hi: list[str] | None = None) -> None:
         self.complete_stage(a, actor, now, "confirmed")
         a.status = "confirmed"
         a.work_order = draft_work_order(a, node_labels)
-        a.advisory = draft_advisory(a, node_labels)
+        a.advisory = draft_advisory(a, node_labels, node_labels_hi)
         self.log.append(now, actor, "drafts_created", a.id,
                         {"work_order_sha": _sha(a.work_order), "advisory_sha": _sha(a.advisory),
                          "advisory_requires": self.policy["advisory_approver"]})
@@ -180,7 +183,7 @@ def _sha(s: str | None) -> str:
 
 def draft_work_order(a: Alert, node_labels: list[str]) -> str:
     lines = [f"DRAFT WORK ORDER: suspected sewage ingress, {a.ward}",
-             f"Alert {a.id}, opened {a.opened:%d %b %Y %H:%M}",
+             f"Alert {a.id}, opened {a.opened_label or f'{a.opened:%d %b %Y %H:%M}'}",
              "Inspect in this order (most likely first):"]
     for i, (c, lab) in enumerate(zip(a.candidates, node_labels), 1):
         lines.append(f"  {i}. {lab}: probability {c['p']:.0%}")
@@ -190,16 +193,17 @@ def draft_work_order(a: Alert, node_labels: list[str]) -> str:
     return "\n".join(lines)
 
 
-def draft_advisory(a: Alert, area_labels: list[str]) -> str:
+def draft_advisory(a: Alert, area_labels: list[str], area_labels_hi: list[str] | None = None) -> str:
     areas = ", ".join(area_labels[:3])
+    areas_hi = ", ".join((area_labels_hi or area_labels)[:3])
     return (
         f"[ड्राफ़्ट: स्वास्थ्य अधिकारी की स्वीकृति आवश्यक]\n"
-        f"[नगर निगम का नाम] · जल कार्य विभाग\n"
-        f"{areas} क्षेत्र के निवासी कृपया अगली सूचना तक पीने का पानी कम से कम 1 मिनट उबालकर पिएँ। "
+        f"[नगर निगम का नाम] · जलप्रदाय विभाग\n"
+        f"{areas_hi} क्षेत्र के निवासी कृपया अगली सूचना तक पीने का पानी कम से कम 1 मिनट उबालकर, ठंडा करके पिएँ। "
         f"दस्त/उल्टी होने पर ORS लें व नज़दीकी स्वास्थ्य केंद्र जाएँ। वैकल्पिक जल आपूर्ति: टैंकर ___। "
-        f"पानी में बदबू, रंग या दस्त-उल्टी की शिकायत 311 / 181 पर दर्ज करें।\n"
+        f"पानी में बदबू, मटमैलापन या दस्त-उल्टी की शिकायत [शिकायत नंबर] पर दर्ज करें।\n"
         f"[DRAFT: requires Health Officer approval]\n"
         f"[Municipal corporation] · Water Works Department\n"
         f"Residents of {areas}: until further notice, boil drinking water for at least one minute. "
         f"If you have diarrhoea or vomiting, take ORS and visit the nearest health centre. "
-        f"Alternative supply: tanker ___. Report smell, discolouration, diarrhoea or vomiting on 311 / 181.")
+        f"Alternative supply: tanker ___. Report smell, discolouration, diarrhoea or vomiting on [complaint number].")

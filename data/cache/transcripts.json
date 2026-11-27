@@ -1,18 +1,8 @@
 {
- "813d04618748e1b2": {
-  "text": "भ्यया, पार्प के पास नल में पीला पानी आ रहा है, बद्बु भी है।",
-  "model": "faster-whisper-medium",
-  "file": "clip1.wav"
- },
  "126b4f9bd78333ed": {
   "text": "पानी की तंकी के पास वाली गली में पानी गंडा आ रहा है, बच्छों को दस्थ हो रहे हैं।",
   "model": "faster-whisper-medium",
   "file": "clip2.wav"
- },
- "fb66e81e37764883": {
-  "text": "पार्क के सामने वाले घरों में कल से पानी मतमैला है, घर में दो लोगों को उल्ती हुई।",
-  "model": "faster-whisper-medium",
-  "file": "clip3.wav"
  },
  "f29a692d58d76596": {
   "text": "तंकी के पीच्छे पानी में जाग और बद्बू आ रही है।",
@@ -23,5 +13,15 @@
   "text": "पानी थीक है, बस प्रेशर कम है।",
   "model": "faster-whisper-medium",
   "file": "clip5.wav"
+ },
+ "62aefd45e2c7e62d": {
+  "text": "भिया, पार्प के पास नल में पीला पानी आ रहा है, बद्बू भी है।",
+  "model": "faster-whisper-medium",
+  "file": "clip1.wav"
+ },
+ "54a852a1cdd89702": {
+  "text": "लिनिक के सामने वाले घरों में कल से पानी मतमैला है, घर में दू लोगों को उल्ती हुई।",
+  "model": "faster-whisper-medium",
+  "file": "clip3.wav"
  }
 }

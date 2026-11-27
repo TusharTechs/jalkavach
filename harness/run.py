@@ -46,7 +46,8 @@ def _init(topology: str, k_worlds: int):
             f2 = feats.copy()
             f2["pressure"] = pd.Series(meta["deficits"][psi])
             priors[f"Fpsi{int(psi)}"] = exposure_prior(f2).to_numpy()
-        wpath = CACHE / f"worlds_{k_worlds}.npz"
+        # keyed by ward location and size, so a moved ward never reuses another ward's perturbed worlds
+        wpath = CACHE / f"worlds_{cfg['name']}_{cfg['center'][0]:.4f}_{cfg['center'][1]:.4f}_{len(ctx.prior)}_{k_worlds}.npz"
         if wpath.exists():
             z = np.load(wpath)
             worlds = [World(R=z[f"R{i}"], cl_base=z[f"cl{i}"], label=f"perturbed-{i}") for i in range(k_worlds)]
