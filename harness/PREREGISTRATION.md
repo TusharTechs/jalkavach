@@ -82,6 +82,12 @@ Written **before** the first harness run (26 Nov 2026). It was committed in the 
   - The full pre-registered evaluation was re-run **unchanged** on the new ward with the same held-out seeds. The ward is larger (246 junctions vs. 146): lead rose to 7.0 days and detection to 90%, while top-3 localisation fell to 39%. Both are reported as measured.
   - Bootstrap CIs now use a separate seeded stream per topology, so re-running one topology never shifts another's intervals.
 
+- **27 Nov, routing power extension (declared before running).**
+  - The held-out routing ablation (120 specs, 76 usable events) showed info-gain ≈ random (76% vs 75% reaching the top 3). Development seeds (56 usable events) showed info-gain ahead (82% vs 61%). Both samples are small.
+  - **Plan, fixed now:** run `harness/route_extension.py` once on fresh seeds 300,000–300,399 (400 specs), policies info-gain and random, 2 routed tests/day for up to 10 days, unchanged engine and routing code. Primary measure: share reaching the top 3 within 10 days, paired difference with a 95% bootstrap CI; secondary: tests to top 3 (median, mean).
+  - The result is reported in README and the app whatever it shows. The original ablation stays reported as it is.
+  - A batch-aware variant was tried on development seeds only and did not beat plain info-gain (75% vs 82%); it is not used.
+
 **Headline results on every demo ward used** (reported together so that no ward is selected for its numbers):
 
 | Demo ward (as reported at the time; see the change log for what changed between runs) | Junctions | Lead vs. hospital | Detected | vs. count alarm | Top-3 (centroid) |
