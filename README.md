@@ -1,131 +1,190 @@
-# JalKavach
+<p align="center">
+  <img src="brand/mark-512.png" width="112" alt="JalKavach logo: a water drop holding a shield whose crown has the tiers and arched windows of Indore's Rajwada, with a pipe junction inside">
+</p>
 
-**Early warning and pipe-segment localisation for sewage ingress in intermittent urban water networks.**
+<h1 align="center">JalKavach · जलकवच</h1>
 
-Indian cities already collect warning signs that tap water is being contaminated: citizen complaints (311, CM Helpline 181, ward offices), field water tests, and pharmacy sales of ORS. These signals sit in separate places. They arrive as isolated tickets that no system clusters, locates or escalates.
+<p align="center"><b>Know before the hospitals do.</b><br>
+Early warning and pipe localisation for sewage getting into a city's drinking water.<br>
+Built for Indore · BUILD 2036 (TiE Global Summit 2026) · Frontier 06: The Rise of New India</p>
 
-JalKavach joins them into one ward-level alert. Each alert carries:
+<p align="center">
+  <a href="https://youtu.be/-0dS_VIg2MM"><img alt="Watch the demo" src="https://img.shields.io/badge/▶_Demo_video-95_s-e54848?style=for-the-badge&labelColor=0b2a4a"></a>
+  <!--LIVE_BADGE-->
+  <a href="results/RESULTS.md"><img alt="Evaluation" src="https://img.shields.io/badge/Evaluation-pre--registered-168fd8?style=for-the-badge&labelColor=0b2a4a"></a>
+  <a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/License-Apache--2.0-1e9e6e?style=for-the-badge&labelColor=0b2a4a"></a>
+</p>
 
-- the **most likely pipe segments**,
-- a **clock the city sets**,
-- an **owner**, and
-- an **audit trail**.
+<p align="center"><img src="docs/screenshots/04_search_narrowed.jpg" width="900" alt="JalKavach command centre on day 9 of a simulated event: the search is down to 0.8 km of pipe, the top-ranked junctions are near Park 4, and about 5,000 residents are on those pipes"></p>
 
-> Status: hackathon prototype for BUILD 2036 (TiE Global Summit 2026), Frontier 06: The Rise of New India. Every result below is simulated, not field data.
+> **Prototype.** The streets, landmarks and elevations are real (Nipania, Indore). The pipe network, complaints, field tests and pharmacy counts are simulated, and so is every performance number below. It is not field data.
 
-![JalKavach architecture](docs/architecture.png)
+## Links for judges
 
-**Docs:**
-- [Impact case](docs/IMPACT_CASE.md)
-- [Evaluation results](results/RESULTS.md)
-- [Pre-registration](harness/PREREGISTRATION.md)
-- [Escalation policy](configs/escalation.yaml)
-- [Pilot pack: champion, request letter, stage Q&A](docs/PILOT_PACK.md)
-
-## How it works
-
-| Layer | What it does | Data provenance |
-|---|---|---|
-| Network twin | The demo ward is "Ward 00 · Demo Nagar": real streets from Nipania (Tulsi Nagar area), a post-2000 residential colony in east Indore not linked to any reported event. It builds the street graph from OpenStreetMap, then a pipe network along those streets, and runs EPANET 2.2 (via WNTR) with **pressure-dependent demand** and **intermittent supply windows**. | Streets: **real** (OSM). Elevation: **real** (Copernicus DEM via Open-Meteo). Pipes, sewers, ages: **synthetic**, seeded, constrained to the streets. Landmarks carry **generic labels only** ("Park", "Medical store B"); no business names, and places of worship are never used as landmarks. |
-| Exposure prior | Scores each location by pipe age, sewer alongside, and *pressure-deficit hours*. The deficit is an exposure feature informed by Kumpel & Nelson's intermittent-supply field work, swept over 5/10/15 psi. | Derived |
-| Reachability | Runs one EPANET source-trace simulation per candidate ingress location, giving the share of each node's consumed water that passed through it. | Derived |
-| Bayesian engine | Computes a joint posterior over *(location × onset day × intensity)* plus an explicit **no-event** hypothesis. Complaints and pharmacy counts use negative-binomial likelihoods with delay and geocoding kernels. Field tests are kit-agnostic: chlorine (read instantly) or H2S (read the next day). Low chlorine at the network's tail ends is treated as normal and modelled, never assumed to mean contamination. | — |
-| Escalation | The city sets owners, SLAs and the escalation chain (`configs/escalation.yaml`). JalKavach runs the clock, drafts the work order and the Hindi/English advisory (a human approves and sends them), and records everything in a hash-chained audit log. | — |
-| Complaint intake | Local Hindi speech recognition (faster-whisper), offline extraction of colour, odour, symptoms and place that tolerates ASR spelling variants, and phonetic fuzzy geocoding to OSM landmarks and streets. | Demo voice clips: synthetic (TTS) |
-| Field-test reader | A printable card with ArUco markers, white balance and the kit's colour scale. It screens a photo against the IS 10500 limit of 0.2 mg/L free chlorine, or flags H2S-vial blackening. Screening only. | Validated on synthetic photos only. **Lab validation pending.** |
-
-Hospital admissions are **not** an input to the detector. They are the baseline that detection lead time is measured against.
-
-## Results (simulated, held-out; full tables in [`results/RESULTS.md`](results/RESULTS.md))
-
-The evaluation design was pre-registered before the first run: [`harness/PREREGISTRATION.md`](harness/PREREGISTRATION.md). Test scenarios use 10 perturbed networks, a clustered complaint process the engine does not assume, continuous intensities, and true ingress locations drawn from a risk model whose form differs from the engine's prior. The demo ward has 720 event and 400 no-event scenarios. 95% bootstrap CIs are in brackets.
-
-| Question (demo ward, ≤1 false alarm per ward per quarter) | Result |
+| What | Where |
 |---|---|
-| Alarm lead over a hospital-admissions-only baseline (median, paired; its misses counted at day 21) | **7.0 [6.0–8.0] days** |
-| Events detected within 21 days: fusion vs. hospital baseline | **90%** vs. 44% |
-| Events detected: fusion minus complaint-count exceedance (paired) | **+22 [16–28] points** (at ≤1 false alarm per *month*: +2 [−2 to +5], not significant) |
-| True junction (of 246) in the top 3 three days after the alarm: fusion vs. complaint-centroid baseline | **39%** vs. 6% |
-| Fusion minus complaints-only, same metric (paired) | **+13 [6–19] points** |
+| ▶ **Demo video** (95 s, narrated) | https://youtu.be/-0dS_VIg2MM |
+| 🌐 **Live demo** | <!--LIVE_ROW--> |
+| 📑 **Submission deck** (PDF) | [docs/JalKavach_BUILD2036_Submission.pdf](docs/JalKavach_BUILD2036_Submission.pdf) |
+| 📊 **Evaluation results**, every number with its interval | [results/RESULTS.md](results/RESULTS.md) |
+| 🧾 **Pre-registration** and change log, written before the first run | [harness/PREREGISTRATION.md](harness/PREREGISTRATION.md) |
+| 💧 **Impact case**: the problem, cost of one event, adoption path | [docs/IMPACT_CASE.md](docs/IMPACT_CASE.md) |
+| 🤝 **Pilot pack**: partners, request letter, FAQ | [docs/PILOT_PACK.md](docs/PILOT_PACK.md) |
+| 🧭 **Architecture** | [below](#architecture) · [SVG](docs/architecture.svg) |
+| ⚙️ **City escalation policy** (owners, SLAs, chain) | [configs/escalation.yaml](configs/escalation.yaml) |
+| 💻 **Run it yourself** in one command | [below](#run-it-locally) |
+
+## The problem
+
+In December 2025, sewage got into a drinking-water line in a ward of Indore. Press reports describe weeks of foul-water complaints before hundreds of people were hospitalised. The warnings existed. They arrived as separate tickets on helplines, in ward offices and in field tests, and no system joined them up, placed them on a pipe map or escalated them.
+
+Indian cities run **intermittent supply**: pipes sit at low pressure for most of the day, often in the same trench as sewers, which is when sewage gets in. Urban networks have **no continuous water-quality sensing**. Madhya Pradesh's 9,801 Amrut Mitras ran 80,976 ward-level tests after the outbreak, and we found no public record that pools them. Sources and ranges are in the [impact case](docs/IMPACT_CASE.md).
+
+## What JalKavach does
+
+It joins the signals a city **already collects** into one ward-level alert:
+
+- **Signals:** citizen complaints (311, CM Helpline 181, Jal Sunwai, Hindi voice notes), Amrut Mitra field tests, and aggregate ORS sales from partner pharmacies where they agree to share them.
+- **Engine:** a Bayesian model on an EPANET twin of the ward's intermittent supply weighs every pipe junction and onset day against an explicit *"nothing is happening"* hypothesis. Its threshold is calibrated to at most one false alarm per ward per quarter.
+- **Each alert carries:**
+  - **where to test first**: the 90% credible set as kilometres of pipe, ranked junctions, residents on those pipes, and suggested test taps
+  - **a clock the city sets**: an owner and a deadline for every stage, with automatic escalation when a stage is missed
+  - **drafts, never sent**: a work order and a Hindi/English advisory that the Health Officer approves
+  - **a tamper-evident audit trail** that shows who acted, and when
+- **People decide.** When a voice note says "near the park" and five parks match, the officer confirms which one; nothing is pinned by guesswork.
+
+## See it
+
+| | | |
+|---|---|---|
+| <img src="docs/screenshots/02_alert_day8.jpg" alt="Alert day"> **Alert day:** the search opens at 11.5 of 18.9 km | <img src="docs/screenshots/03_intake_which_park.jpg" alt="Intake"> **Hindi voice note:** several parks match, so the officer confirms | <img src="docs/screenshots/04_search_narrowed.jpg" alt="Narrowed"> **Next day:** field tests narrow it to 0.8 km |
+| <img src="docs/screenshots/05_escalation_clock.jpg" alt="Escalation"> **The city's clock:** every stage on time | <img src="docs/screenshots/06_audit_trail.jpg" alt="Audit"> **Hash-chained audit trail** with a live tamper test | <img src="docs/screenshots/07_evidence.jpg" alt="Evidence"> **Evidence**, including what did not work |
+| <img src="docs/screenshots/09_hindi.jpg" alt="Hindi"> **Full Hindi mode** with IMC designations | <img src="docs/screenshots/11_kit_reader.jpg" alt="Kit reader"> **Field-test card reader** (screening) | <img src="docs/screenshots/08_vision_2036.jpg" alt="2036"> **2036:** from one ward to every tap |
+
+## Architecture
+
+![JalKavach architecture: signals, intake, intermittent-supply network twin and Bayesian engine, then decision and accountability, with the pre-registered evaluation harness underneath](docs/architecture.png)
+
+| Layer | What it does | Real or simulated |
+|---|---|---|
+| **Network twin** | Builds the street graph from OpenStreetMap, lays a pipe network along it, and runs EPANET 2.2 (via WNTR) with **pressure-dependent demand** and **intermittent supply windows**. One source-trace run per candidate ingress point gives a reachability tensor R[c, n]; chlorine decay gives each tap's normal level. | Streets, landmarks, elevation (Copernicus DEM): **real**. Pipes, sewers, ages: **synthetic**, seeded, constrained to the streets. Landmarks get generic labels only; places of worship are never used. |
+| **Exposure prior** | Scores each junction by pipe age, sewer alongside and *pressure-deficit hours* (swept over 5/10/15 psi), after Kumpel & Nelson's intermittent-supply field work. | Derived |
+| **Bayesian engine** | Joint posterior over *(location × onset day × intensity)* plus a **no-event** hypothesis. Negative-binomial likelihoods for complaints and pharmacy counts with delay and geocoding kernels; kit-agnostic field tests (chlorine read at once, H2S next day); low chlorine at tail ends is modelled as normal. About 20 ms per update on a laptop. | — |
+| **Escalation** | The city sets owners, SLAs and the chain in [`configs/escalation.yaml`](configs/escalation.yaml). JalKavach runs the clock, requires a reason when a stage is late, drafts the work order and the advisory, and records everything in a hash-chained SQLite log. | — |
+| **Intake** | Hindi speech recognition on the machine itself (faster-whisper), extraction of colour, odour, symptoms and place that tolerates ASR spelling variants, and phonetic fuzzy matching to OSM landmarks. Ambiguous places are never auto-pinned. | Demo voice clips are synthetic (TTS) |
+| **Field-test reader** | A printable card with ArUco markers: perspective correction, white balance, CIE-LAB matching against the kit's scale, screening at the IS 10500 limit of 0.2 mg/L free chlorine, or H2S vial blackening. | Validated on synthetic photos only; lab validation pending |
+
+Hospital admissions are **not** an input. They are the baseline that lead time is measured against.
+
+## Results
+
+Simulated, held-out, and **pre-registered** before the first run ([`harness/PREREGISTRATION.md`](harness/PREREGISTRATION.md)). The test scenarios use 10 perturbed networks, a clustered complaint process the engine does not assume, continuous intensities, and true ingress points drawn from a risk model whose form differs from the engine's prior: 720 event and 400 no-event scenarios on the demo ward. 95% bootstrap CIs in brackets.
+
+| At ≤1 false alarm per ward per quarter | Result |
+|---|---|
+| Alarm lead over a hospital-admissions-only baseline (median, paired; its misses counted at day 21) | **7.0 [6.0–8.0] days** · 4.0 [3.0–5.0] among the 98 events both catch |
+| Events detected within 21 days: JalKavach vs. hospital-only | **90%** vs. 44% |
+| True junction (of 246) in the top 3, three days after the alarm: joined signals vs. complaints alone vs. complaint centroid | **39%** vs. 26% vs. 6% |
+| Events caught by the engine minus a simple complaint-count alarm (paired) | **+22 [16–28] points** (at ≤1 false alarm per *month*: +2, not significant) |
 | Coverage of the 90% credible set | 93% [89–96] |
-| Robustness topology (EPANET Net3): lead over the hospital baseline; top-3 | 5.0 [4.0–6.0] days; 68% |
+| Robustness network (EPANET Net3): lead; top-3 | 5.0 [4.0–6.0] days; 68% |
+| Suggested test taps vs. random taps (larger run, declared before it ran; 280 events) | 66% vs. 55% reach the top 3, **+11 [6–16] points** (the smaller pre-registered run showed no difference) |
 
-**The demo ward moved twice, for reasons unrelated to results** (see the change log in the pre-registration). Every ward is reported, not just the current one. Detection is stable; localisation gets harder as the ward grows:
+**What did not work as well, reported as measured:**
+- **Timing and counts:** joining signals alarms no earlier and catches no more events than complaints alone (90% vs. 90%). Its gain is **where**: 39% vs. 26% top-3.
+- **Intermittent-supply prior vs. a 24×7 prior:** +3.2 points top-3, CI −0.9 to +7.4. Not significant.
+- **Ward size:** 39% top-3 on this 246-junction ward vs. 68% on the smaller Net3. Bigger wards need more field tests.
+- **Equity:** where the exposed population reports less, detection falls to 84% (94% where they report more). Missed-call / IVR intake is the next step.
+- **Geocoding precision:** top-3 is 20% with 250 m geocoding error and 60% at 60 m, which is why ambiguous landmarks go to a person.
+- **Small exposures:** ingress reaching only a few dozen residents is rarely detectable from complaints; routine tests remain the safeguard.
 
-| Demo ward (as reported at the time; see the change log for what changed between runs) | Junctions | Lead vs. hospital | Detected | vs. count alarm | Top-3 (centroid) |
+**Every demo ward we used is reported.** The ward moved twice, for reasons unrelated to results (see the change log):
+
+| Demo ward (as reported at the time) | Junctions | Lead vs. hospital | Detected | vs. count alarm | Top-3 (centroid) |
 |---|---|---|---|---|---|
 | 1st: site of a real 2025–26 outbreak, withdrawn | 84 | 7.0 [6–8] d | 94% | +13 [8–18] | 67% (12%) |
 | 2nd: old-city ward, withdrawn as politically sensitive | 146 | 5.0 [4–6] d | 85% | +16 [11–21] | 57% (13%) |
 | **3rd: Nipania (current)** | 246 | **7.0 [6–8] d** | **90%** | **+22 [16–28]** | **39% (6%)** |
 
-**What did not work as well, reported as measured:**
-- **Detection timing.** It is driven by complaints. Fusion alarms no earlier than complaints alone or a simple complaint-count exceedance detector. Fusion also catches no **more** events than complaints alone (90% vs. 90%): the +22 points are the engine's complaint model vs. a simple count alarm. Fusion's own gain is **where**: 39% vs. 26% top-3.
-- **Intermittent-supply prior vs. a 24×7-style prior.** +3.2 points of top-3 accuracy, with a CI of −0.9 to +7.4. **Not significant.** The informed prior beats a uniform one by only +3.7 [−1.4 to +8.3] points.
-- **Ward size.** On this 246-junction ward, top-3 localisation is 39%; on the smaller EPANET Net3 it is 68%. Bigger wards need more field tests.
-- **Information-gain field-test routing: mixed evidence, both runs reported.** In the pre-registered ablation (76 usable events) it was no better than random (median 6 vs. 6 tests; mean 8.9 vs. 9.4). A larger run, declared in the change log before it ran (fresh seeds, 280 usable events, unchanged code), found it ahead: the true junction reached the top 3 within 10 days in 66% of events vs. 55% for random taps (+11 points, 95% CI 6–16; tests to top 3: median 8 vs. 14, mean 11.2 vs. 12.9, with "never" counted as 21). Pooled over both runs (356 events): 68% vs. 59%, about +9 points. Random's own rate moved from 75% to 55% between samples, so sampling noise is large: read this as supportive, not definitive. The nearest-complaint baseline was not re-run. `results/routing_extension.json`.
-- **Equity.** Where the exposed population reports less, fusion detects 84% of events, vs. 94% elsewhere.
-- **Geocoding precision matters.** With 250 m geocoding error, top-3 localisation falls to 20% (60% at 60 m). Ambiguous landmarks are therefore never auto-pinned: the officer chooses.
-- **Small exposures.** Ingress that reaches only a few dozen residents is rarely detectable from complaints.
+Reproduce with `make eval` (about 3 minutes on 8 cores), then `make report`.
 
-Reproduce: `make eval` (about 3 minutes on 8 cores), then `make report`.
+## Engineering notes
 
-## Quick start
+- **State is a pure function of (day, hour, recorded actions).** Scrubbing the timeline back and forth is always consistent, and every view can be deep-linked: `/?view=command&day=9&hour=18&lang=hi`.
+- **Causal by timestamp.** Evidence counts only from the moment it was recorded, so late evidence never rewrites an earlier evaluation (tested).
+- **One scenario per visitor.** On a shared deployment each browser tab sends its own session id, so judges never see each other's complaints or actions (tested).
+- **Calibrated, not tuned.** Alert thresholds come from null scenarios at the false-alarm budget; the held-out seeds were never used for development.
+- **Accountability by construction.** Actions after a missed deadline need a reason, enforced on the server; the audit log is hash-chained and the UI has a live tamper test.
+- **Bilingual.** Every screen works in Hindi, including Indore Municipal Corporation designations and the advisory text.
+- **Tested.** 41 tests (engine, harness, service, product, sessions) run offline in CI; `make demo-check` exercises every endpoint, the story path, live Hindi transcription and the build.
+
+## Run it locally
+
+Works on macOS, Linux and Windows. Everything runs offline after setup; the built web app is committed, so Node is only needed to change the front end.
+
+**Option A: Python with [uv](https://docs.astral.sh/uv/)** (recommended)
 
 ```bash
-make setup   # uv sync --frozen (Python 3.12)
-make test    # offline, uses committed cache in data/cache
-make demo    # offline demo scenario (CLI)
-make app         # command centre at http://localhost:8036 (offline; serves the committed web/dist)
-make web         # rebuild the web front end (Node 22 + pnpm)
+git clone https://github.com/TusharTechs/jalkavach.git
+cd jalkavach
+uv sync --frozen --extra voice      # Python 3.12 and pinned dependencies (uv installs Python if needed)
+uv run uvicorn app.server:app --port 8036
 ```
 
-### Command centre
+Open http://localhost:8036. The first Hindi transcription downloads the speech model once (about 1.5 GB for `medium`; set `JALKAVACH_ASR_MODEL=small` for a 480 MB model).
 
-`make app` serves a React + deck.gl command centre on top of the engine. It has:
+On macOS or Linux the same steps are wrapped in `make`:
 
-- **3D ward twin:**
-  - extruded OSM buildings
-  - pipes coloured by probability
-  - simulated water flow during supply hours only
-  - a low-pressure exposure layer when supply is off
-  - the predicted plume if the #1 junction is the source
-  - absolute probability columns
-- **Alert:** calibrated to ≤1 false alarm per ward per quarter. Playback pauses when it opens, the camera flies to the likely pipes, and a "search area" metric shows how much pipe is left to test first (results are unconfirmed until field tests).
-- **Intake:**
-  - Hindi voice notes transcribed live on the laptop with faster-whisper (or recorded on the microphone)
-  - extraction and ambiguity-aware landmark geocoding
-  - the field-card photo reader
-- **City escalation clock:** owners, SLAs and the escalation chain set in `configs/escalation.yaml`; drafts need human approval; a printable export pack.
-- **Hash-chained audit trail:** with a live tamper test.
-- **Evidence and 2036 views.**
+```bash
+make setup   # uv sync
+make app     # command centre at http://localhost:8036
+make test    # offline tests
+make eval    # re-run the pre-registered evaluation, then: make report
+```
 
-All state is a pure function of (day, hour, recorded actions), so scrubbing the timeline is always consistent.
+**Option B: Docker** (any OS)
 
-**Presenter controls:**
-- Story mode (`P`): a hands-free, narrated walkthrough of about 75 seconds.
-- `←`/`→` change the day; `space` plays or pauses.
-- `1`–`6` switch views.
-- `S` stage mode (larger type), `H` Hindi, `R` reveal the simulated truth.
-- Fallback video: `make video` records story mode with narration to `media/jalkavach_story.mp4`.
+```bash
+docker build -t jalkavach .
+docker run -p 8036:8036 jalkavach
+```
 
-Deep links: `/?view=command&day=7&hour=18`, `&stage`, `&lang=hi`, `&reset`.
+**Front end development** (Node 22 + pnpm): `cd web && pnpm install && pnpm dev`, or `make web` to rebuild `web/dist`.
 
-The legacy Streamlit dashboard is still available: `make dashboard`.
+**Presenter controls:** `P` plays the narrated story (about 90 s) · `←`/`→` change the day · `space` plays or pauses · `1`–`6` switch views · `S` stage mode · `H` Hindi · `R` reveals the simulated truth.
+
+## Repository map
+
+```
+app/            FastAPI server (API + the built web app)
+src/jalkavach/  engine: network twin, hydraulics, prior, posterior, signals, intake, kit reader, escalation, service
+harness/        pre-registered evaluation, report, routing extension
+results/        RESULTS.md, summaries, per-event CSVs, figures
+web/            React + deck.gl command centre (source in web/src, build in web/dist)
+configs/        demo ward and the city's escalation policy
+data/           cached OSM / elevation / hydraulics, demo scenario and voice clips
+docs/           architecture, impact case, pilot pack, screenshots, submission deck
+scripts/        demo check, narrated video recorder
+tests/          pytest suite
+```
 
 ## Honest limitations
 
-- The pipe topology is synthetic. It is constrained to real streets but is not the utility's network. Given one ward's network map and complaint log, the synthetic layers can be replaced.
-- Every performance number comes from simulated scenarios, not field data. The harness uses model mismatch and a complaint process different from the one the engine assumes, to avoid grading the model on its own assumptions. The scenario parameters (complaint rates, pharmacy response) are assumptions, documented in `src/jalkavach/signals.py` and swept where it matters.
-- The second topology (EPANET Net3) is a standard benchmark used for robustness only. It is not an Indian network.
-- EPANET is a full-pipe solver. We do not simulate pipes draining and refilling.
-- "No alert" does not mean "safe". Ingress at dead-end lanes that reach only a few dozen residents produces too few complaints to detect; routine field tests are the only safeguard there.
+- The pipe topology is synthetic: constrained to real streets, but not the utility's network. One ward's network map and complaint log replace the synthetic layers.
+- Every performance number comes from simulation, not field data. The harness uses model mismatch and a complaint process the engine does not assume, so the model is not graded on its own assumptions. Scenario parameters are assumptions, documented in `src/jalkavach/signals.py` and swept where it matters.
+- EPANET Net3 is a standard benchmark used for robustness only; it is not an Indian network. EPANET is a full-pipe solver: we do not simulate pipes draining and refilling.
+- "No alert" does not mean "safe".
 
-## Prior work we build on
+**Prior work we build on:** the US EPA's Water Quality Surveillance and Response System pilots (multi-signal contamination warning) and the Bayesian source-identification literature. JalKavach adapts them to chronic ingress on intermittent Indian networks, adds the city's own escalation clock and Hindi intake, and measures its contribution with ablations.
 
-- The US EPA's Water Quality Surveillance and Response Systems piloted multi-signal contamination warning: customer complaints, public-health surveillance and online sensors. Their evaluations showed each signal alone is noisy.
-- Bayesian contamination source identification on water networks is established in the literature.
-- JalKavach adapts these ideas to **chronic ingress on intermittent Indian networks** and measures its contribution with ablations.
+## AI tools and technologies used
+
+<sub>
+<b>In the product:</b> Bayesian inference (NumPy/SciPy), EPANET 2.2 via WNTR, faster-whisper for Hindi speech recognition (open model, runs on the machine running JalKavach), OpenCV for the kit reader, expected-information-gain test routing. No model writes advisories or decides alerts; people approve every draft.<br>
+<b>Stack:</b> Python 3.12, FastAPI, OSMnx, React 19, TypeScript, Vite, Tailwind v4, deck.gl 9, Motion, Recharts, pytest, GitHub Actions, uv, Docker.<br>
+<b>While building:</b> Claude Code (Anthropic) as a coding and review assistant; Sarvam Bulbul for the demo video's narration voice; macOS text-to-speech for the synthetic demo voice clips.
+</sub>
 
 ## License
 
-Apache-2.0. No patents are filed or planned: the engine is meant to be reused by any city, toward the Digital Public Goods standard.
+[Apache-2.0](LICENSE). No patents are filed or planned: the engine is meant to be reused by any city, toward the Digital Public Goods standard.

@@ -127,6 +127,8 @@ const HI: Record<string, string> = {
   "Signed in as (demo role)": "किस भूमिका में (डेमो)",
   "Audio is processed on this laptop and not stored. No phone numbers are kept. Purpose: locating unsafe water only.":
     "आवाज़ इसी लैपटॉप पर प्रोसेस होती है, सहेजी नहीं जाती। कोई फ़ोन नंबर नहीं रखा जाता। उद्देश्य: केवल असुरक्षित पानी का स्थान पता करना।",
+  "Audio is processed on JalKavach's own server (no third-party service) and not stored. No phone numbers are kept. Purpose: locating unsafe water only.":
+    "आवाज़ जलकवच के अपने सर्वर पर प्रोसेस होती है (कोई बाहरी सेवा नहीं), सहेजी नहीं जाती। कोई फ़ोन नंबर नहीं रखा जाता। उद्देश्य: केवल असुरक्षित पानी का स्थान पता करना।",
 };
 
 export function useT() {

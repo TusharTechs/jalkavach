@@ -16,7 +16,10 @@ import hashlib
 import json
 import subprocess
 import tempfile
+import contextvars
+import os
 import threading
+from collections import OrderedDict
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -42,6 +45,13 @@ EVAL_HOUR = 18
 def _logit(p: float) -> float:
     p = min(max(p, 1e-12), 1 - 1e-12)
     return float(np.log(p / (1 - p)))
+
+
+# Which visitor's scenario a request acts on (set per request by the web server; tests use "default").
+SESSION: contextvars.ContextVar[str] = contextvars.ContextVar("jalkavach_session", default="default")
+ASR_MODEL = os.environ.get("JALKAVACH_ASR_MODEL", "medium")
+WHERE = "on this server" if os.environ.get("JALKAVACH_HOSTED") else "on this laptop"   # audio never leaves the machine running JalKavach
+MAX_SESSIONS = 500
 
 
 class Service:
@@ -70,7 +80,8 @@ class Service:
         self.total_km = sum(self.pipe_km.values())
         self.lock = threading.Lock()
         self._post_cache: dict = {}
-        self.actions: list[dict] = []
+        self._sessions: OrderedDict[str, list[dict]] = OrderedDict()   # one demo scenario per visitor
+        self._sessions_lock = threading.Lock()
         self._whisper = None
         self._whisper_thread = threading.Thread(target=self._warm_whisper, daemon=True)
         self._whisper_thread.start()
@@ -103,6 +114,24 @@ class Service:
         dish = ["उत्तर", "उत्तर-पूर्व", "पूर्व", "दक्षिण-पूर्व", "दक्षिण", "दक्षिण-पश्चिम", "पश्चिम", "उत्तर-पश्चिम"][k]
         m = int(round(dist / 10) * 10)
         return f"Lane {i} · {m} m {compass} of {best['name']}", f"गली {i} · {hi} से {m} मी {dish}"
+
+    @property
+    def actions(self) -> list[dict]:
+        """The current visitor's recorded actions (state = f(day, hour, actions))."""
+        sid = SESSION.get()
+        with self._sessions_lock:
+            acts = self._sessions.get(sid)
+            if acts is None:
+                acts = self._sessions[sid] = []
+                while len(self._sessions) > MAX_SESSIONS:
+                    self._sessions.popitem(last=False)
+            self._sessions.move_to_end(sid)
+            return acts
+
+    @actions.setter
+    def actions(self, value: list[dict]) -> None:
+        with self._sessions_lock:
+            self._sessions[SESSION.get()] = value
 
     def now(self, day: int, hour: int) -> datetime:
         return BASE_DATE + timedelta(days=day, hours=hour)
@@ -253,7 +282,7 @@ class Service:
             C[n, d] += c
         eng = EscalationEngine(AuditLog())
         return {"days": self.D, "alarm_day": self.replay["alarm_day"], "threshold": self.thr,
-                "base_date": BASE_DATE.isoformat(), "note": self.replay["note"], "eval_hour": EVAL_HOUR,
+                "base_date": BASE_DATE.isoformat(), "note": self.replay["note"], "eval_hour": EVAL_HOUR, "hosted": bool(os.environ.get("JALKAVACH_HOSTED")),
                 "supply_windows": self.ward.cfg["supply"]["windows"],
                 "scales": {"complaints": int(C.sum(axis=0).max()) + 4, "pharmacy": int(max(o["syndromic"])) + 4,
                            "pharmacy_base": self.ctx.params.syndromic_base},
@@ -404,7 +433,7 @@ class Service:
     def _warm_whisper(self):
         try:
             from faster_whisper import WhisperModel
-            self._whisper = WhisperModel("medium", device="cpu", compute_type="int8")
+            self._whisper = WhisperModel(ASR_MODEL, device="cpu", compute_type="int8")
         except Exception:
             self._whisper = None
 
@@ -413,7 +442,7 @@ class Service:
             return {"state": "warming", "label": "Hindi speech model loading (about a minute after start)"}
         if self._whisper is None:
             return {"state": "unavailable", "label": "speech model not installed: cached transcripts are used"}
-        return {"state": "ready", "label": "faster-whisper medium · ready on this laptop"}
+        return {"state": "ready", "label": f"faster-whisper {ASR_MODEL} · ready {WHERE}"}
 
     def _wav16k(self, src: str) -> str:
         out = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
@@ -447,7 +476,7 @@ class Service:
         finally:
             if convert:
                 Path(wav).unlink(missing_ok=True)
-        return {"ok": True, "text": text, "source": "faster-whisper medium · on this laptop",
+        return {"ok": True, "text": text, "source": f"faster-whisper {ASR_MODEL} · {WHERE}",
                 "seconds": round(time.time() - t0, 2), "parsed": self.parse_complaint(text)}
 
     def transcribe_clip(self, cid: str) -> dict:

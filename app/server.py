@@ -19,9 +19,30 @@ from pydantic import BaseModel
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from jalkavach.service import Service  # noqa: E402
+from jalkavach.service import SESSION, Service  # noqa: E402
+
+
+class DemoSession:
+    """Pure ASGI middleware: each browser tab sends X-Demo-Session, so visitors never see each
+    other's complaints or actions on a shared deployment (contextvars reach the worker threads)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        raw = dict(scope.get("headers") or []).get(b"x-demo-session", b"default")
+        sid = "".join(ch for ch in raw.decode("latin-1") if ch.isalnum() or ch in "-_")[:64] or "default"
+        token = SESSION.set(sid)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            SESSION.reset(token)
+
 
 app = FastAPI(title="JalKavach API", version="0.2.0")
+app.add_middleware(DemoSession)
 svc = Service()
 
 

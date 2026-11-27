@@ -14,6 +14,7 @@ export type Network = {
 };
 export type Stage = { id: string; label: string; owner: string; sla_hours: number };
 export type Meta = {
+  hosted?: boolean;
   days: number; alarm_day: number; threshold: number; base_date: string; note: string; eval_hour: number;
   supply_windows: [number, number][];
   scales: { complaints: number; pharmacy: number; pharmacy_base: number };
@@ -58,6 +59,19 @@ export type KitResult = {
   scale: { mg: number; rgb: [number, number, number] }[];
 };
 export type AuditRow = { seq: number; ts: string; actor: string; action: string; alert_id: string; payload: Record<string, unknown>; prev_hash: string; hash: string };
+
+/** Each browser tab gets its own demo scenario on a shared deployment (screenshots use the default one). */
+const SESSION_ID = (() => {
+  const fresh = () => (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));
+  if (new URLSearchParams(window.location.search).has("shot")) return "default";
+  try {
+    let s = sessionStorage.getItem("jk-session");
+    if (!s) { s = fresh(); sessionStorage.setItem("jk-session", s); }
+    return s;
+  } catch { return fresh(); }
+})();
+const fetch = (input: RequestInfo | URL, init: RequestInit = {}) =>
+  window.fetch(input, { ...init, headers: { ...((init.headers as Record<string, string>) ?? {}), "X-Demo-Session": SESSION_ID } });
 
 const j = async <T,>(r: Response): Promise<T> => {
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);

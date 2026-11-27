@@ -1,17 +1,13 @@
-# Pilot pack: champion, request letter and stage Q&A
+# Pilot pack: partners, request letter and FAQ
 
-## 1. Champion and advisors (to be filled in by the team; no names are invented here)
+## 1. Who a pilot needs
 
-A pilot needs one named person inside or close to the city. Approach in this order:
-
-| Role | Why them | Status |
-|---|---|---|
-| Retired Executive / Superintending Engineer, IMC Water Works (Jalprada) | Knows the network map, the trench layout and how complaints reach the ward office | _name, date approached_ |
-| District Surveillance Officer, IDSP Indore | Owns outbreak signals; is "informed" in our escalation policy | _name, date approached_ |
-| Faculty in public health or environmental engineering (e.g. a local medical or engineering college) | Independent validation partner for the pilot evaluation | _name, date approached_ |
-| Ward councillor (पार्षद) of the pilot ward | Residents' trust; an information copy of advisories (city decides) | _name, date approached_ |
-
-Only list a person on a slide after they have agreed in writing.
+| Role | Why |
+|---|---|
+| A senior or retired engineer from the city's water works | Knows the network map, the trench layout and how complaints reach the ward office |
+| District Surveillance Officer (IDSP) | Owns outbreak signals; is informed when an alert opens |
+| A public-health or environmental-engineering faculty member | Independent validation of the pilot evaluation |
+| The pilot ward's councillor (पार्षद) | Residents' trust; an information copy of approved advisories, if the city wants one |
 
 ## 2. Pilot request letter (template)
 
@@ -28,7 +24,7 @@ Only list a person on a slide after they have agreed in writing.
 >
 > _Name, contact, date_
 
-## 3. Stage Q&A (answers from our own results; all simulated)
+## 3. Frequently asked questions (answers from our own results; all simulated)
 
 **"You moved the ward and the lead improved. Ward-shopping?"**
 The ward moved twice for site sensitivity: the first site matched a real outbreak, the second was politically sensitive. All three results are published side by side in the README; top-3 localisation fell (67% → 57% → 39%) as the ward grew. Lead has stayed in the 5–7 day range.
@@ -46,7 +42,7 @@ Pharmacy data is optional. Complaints alone detect 90% of events (fusion 90%); f
 It builds on that work (multi-signal warning; Bayesian source identification). What is new is the target: chronic ingress on intermittent Indian networks, a city-set escalation clock, Hindi intake, and an evaluation that reports what did not work.
 
 **"Do your suggested test taps help?"**
-Mixed, and we show both. On the pre-registered run (76 events) it was no better than random. A larger run declared in advance (280 events, fresh seeds, unchanged code) found it ahead: 66% vs 55% reach the top 3 (+11 points, CI 6–16; mean 11.2 vs 12.9 tests). Pooled over both runs: 68% vs 59%, about +9. Random itself moved 75% → 55% between samples, so treat it as supportive, not definitive. Day 9's top two pipes are a tie (27% each): say "tie".
+Mixed, and we show both. On the pre-registered run (76 events) it was no better than random. A larger run declared in advance (280 events, fresh seeds, unchanged code) found it ahead: 66% vs 55% reach the top 3 (+11 points, CI 6–16; mean 11.2 vs 12.9 tests). Pooled over both runs: 68% vs 59%, about +9. Random itself moved 75% → 55% between samples, so treat it as supportive, not definitive.
 
 **"Is the demo cherry-picked?"**
 The scenario's detection delay matches the median. It is a successful localisation case, which happens in 39% of events; we say so on screen.

@@ -164,7 +164,9 @@ export function Intake() {
                 </button>
                 <div ref={waveRef} className="flex-1" />
               </div>
-              <div className="text-[12px] text-mist mt-2 leading-snug">{t("Audio is processed on this laptop and not stored. No phone numbers are kept. Purpose: locating unsafe water only.")} Demo voices are synthetic (TTS).</div>
+              <div className="text-[12px] text-mist mt-2 leading-snug">{t(useStore.getState().meta?.hosted
+                ? "Audio is processed on JalKavach's own server (no third-party service) and not stored. No phone numbers are kept. Purpose: locating unsafe water only."
+                : "Audio is processed on this laptop and not stored. No phone numbers are kept. Purpose: locating unsafe water only.")} Demo voices are synthetic (TTS).</div>
               {asrState && <div className={clsx("text-[11.5px] mt-1 flex items-center gap-1.5", asrState.state === "ready" ? "text-mint" : "text-amber")}><span className={clsx("w-1.5 h-1.5 rounded-full", asrState.state === "ready" ? "bg-mint" : "bg-amber ping-soft")} />{asrState.label}</div>}
             </div>
             <button onClick={transcribe} disabled={phase === "busy"} className="w-full rounded-xl py-3 font-display font-semibold bg-gradient-to-r from-aqua to-cyan text-abyss flex items-center justify-center gap-2 disabled:opacity-60">

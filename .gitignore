@@ -4,7 +4,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
-# never publish project-idea / competition research
+# private notes live outside this repo
 research/
 ../research/
 *.research.md

@@ -86,7 +86,7 @@
     <text x="625" y="436" class="s" style="fill:#dbe8f5">+ explicit no-event hypothesis H0</text>
     <text x="625" y="460" class="s" style="fill:#dbe8f5">negative-binomial likelihoods with delay +</text>
     <text x="625" y="479" class="s" style="fill:#dbe8f5">geocoding kernels; kit likelihood vs. baseline Cl</text>
-    <text x="625" y="503" class="s" style="fill:#dbe8f5">outputs: P(event) · ranked segments ·</text>
+    <text x="625" y="503" class="s" style="fill:#dbe8f5">outputs: P(event) · ranked junctions ·</text>
     <text x="625" y="522" class="s" style="fill:#dbe8f5">90% credible set · evidence per signal</text>
     <text x="625" y="546" class="s" style="fill:#9fc3e6">~20 ms per update on a laptop</text>
   </g>
@@ -115,7 +115,7 @@
     <rect x="1010" y="415" width="220" height="130" rx="10" fill="#ffffff" stroke="#555" stroke-width="1.2"/>
     <text x="1025" y="442" class="t">Drafts, never sent</text>
     <text x="1025" y="464" class="s">work order (ranked</text>
-    <text x="1025" y="483" class="s">segments) · Hindi + English</text>
+    <text x="1025" y="483" class="s">junctions) · Hindi + English</text>
     <text x="1025" y="502" class="s">boil-water advisory → needs</text>
     <text x="1025" y="521" class="s">Health Officer approval</text>
 
@@ -161,5 +161,5 @@
   <text x="50" y="770" class="t">Evaluation harness (pre-registered; harness/PREREGISTRATION.md)</text>
   <text x="50" y="795" class="s">1,120 held-out simulated scenarios on the demo ward + 400 on EPANET Net3 · 10 perturbed networks · clustered complaint process the engine does not assume ·</text>
   <text x="50" y="815" class="s">truth from a different risk model · baselines: hospital-admissions EARS, complaint-count EARS, complaint centroid · ablations: fusion vs. single signals, priors, routing</text>
-  <text x="50" y="845" style="font-size:15px;font-weight:700;fill:#1e6b35">Median lead over hospital-only baseline 7.0 [6.0–8.0] days · detected 94% vs 52% · true segment in top 3: 67% vs 12% · 90% sets cover 95%</text>
+  <text x="50" y="845" style="font-size:15px;font-weight:700;fill:#1e6b35">Lead over hospital-only 7.0 [6–8] d (4.0 among events both catch) · detected 90% vs 44% · true junction in top 3: 39% vs 6% centroid, 26% complaints alone · 90% sets cover 93%</text>
 </svg>
