@@ -81,3 +81,11 @@ Written **before** the first harness run (26 Nov 2026). It was committed in the 
   - Causality fix in the web service only: evidence is admitted by its timestamp, so an action after a day's 18:00 run counts toward the next run. The harness never used the service, so no metric definition changed.
   - The full pre-registered evaluation was re-run **unchanged** on the new ward with the same held-out seeds. The ward is larger (246 junctions vs. 146): lead rose to 7.0 days and detection to 90%, while top-3 localisation fell to 39%. Both are reported as measured.
   - Bootstrap CIs now use a separate seeded stream per topology, so re-running one topology never shifts another's intervals.
+
+**Headline results on every demo ward used** (reported together so that no ward is selected for its numbers):
+
+| Demo ward (as reported at the time; see the change log for what changed between runs) | Junctions | Lead vs. hospital | Detected | vs. count alarm | Top-3 (centroid) |
+|---|---|---|---|---|---|
+| 1st: site of a real 2025–26 outbreak, withdrawn | 84 | 7.0 [6–8] d | 94% | +13 [8–18] | 67% (12%) |
+| 2nd: old-city ward, withdrawn as politically sensitive | 146 | 5.0 [4–6] d | 85% | +16 [11–21] | 57% (13%) |
+| **3rd: Nipania (current)** | 246 | **7.0 [6–8] d** | **90%** | **+22 [16–28]** | **39% (6%)** |

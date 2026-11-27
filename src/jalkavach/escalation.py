@@ -193,9 +193,29 @@ def draft_work_order(a: Alert, node_labels: list[str]) -> str:
     return "\n".join(lines)
 
 
+def _group_areas(labels: list[str], hi: bool) -> str:
+    """'Lane 143 · 40 m SE of Park 4' x3 -> 'Lanes 143, 125, 142 near Park 4' (how a resident reads it)."""
+    groups: dict[str, list[str]] = {}
+    loose: list[str] = []
+    for lab in labels:
+        lane, _, where = lab.partition(" · ")
+        if hi:
+            mark = where.removesuffix(" के पास").split(" से ")[0]
+        else:
+            mark = where.removeprefix("at ").rsplit(" of ", 1)[-1]
+        num = lane.split()[-1] if lane.split() else lane
+        if mark and num.isdigit():
+            groups.setdefault(mark, []).append(num)
+        else:
+            loose.append(lab)
+    parts = [(f"{m} के पास गली {', '.join(n)}" if hi else f"{'Lanes' if len(n) > 1 else 'Lane'} {', '.join(n)} near {m}")
+             for m, n in groups.items()]
+    return "; ".join(parts + loose)
+
+
 def draft_advisory(a: Alert, area_labels: list[str], area_labels_hi: list[str] | None = None) -> str:
-    areas = ", ".join(area_labels[:3])
-    areas_hi = ", ".join((area_labels_hi or area_labels)[:3])
+    areas = _group_areas(area_labels[:3], hi=False)
+    areas_hi = _group_areas((area_labels_hi or area_labels)[:3], hi=bool(area_labels_hi))
     return (
         f"[ड्राफ़्ट: स्वास्थ्य अधिकारी की स्वीकृति आवश्यक]\n"
         f"[नगर निगम का नाम] · जलप्रदाय विभाग\n"

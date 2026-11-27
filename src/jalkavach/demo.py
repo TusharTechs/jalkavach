@@ -67,9 +67,10 @@ def build(seed_range=range(200, 400)) -> dict:
     out = {
         "label": ward.cfg["label"], "seed": seed, "alert_threshold": thr,
         "provenance": ward.provenance,
-        "note": (f"Simulated scenario chosen to be typical: its detection delay ({med} days) and its "
-                 "localisation (true segment in top 3 three days after the alert) match the "
-                 "harness medians. It is not a reconstruction of any real event."),
+        "note": (f"Simulated scenario. Its detection delay ({med} days) matches the harness median. "
+                 "It is a successful localisation case (true junction in the top 3 three days after the "
+                 "alert), which happens in a minority of events (see results/RESULTS.md). "
+                 "It is not a reconstruction of any real event."),
         "truth": {"node": event["c"], "onset_day": event["t0"]},
         "alarm_day": alarm,
         "nodes": [{"id": n, "lat": float(r.lat), "lon": float(r.lon), "pop": float(r.population),

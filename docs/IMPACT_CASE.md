@@ -55,6 +55,7 @@ All results below are at **≤1 false alarm per ward per quarter**. Brackets are
 - Fusion does not alarm *earlier* than complaints alone. Its gains are in *how many* events are caught and in *where* they are located.
 - The intermittent-supply prior does not beat a 24×7 prior significantly: +3.2 points, CI −0.9 to +7.4.
 - Localisation is harder in bigger wards: 39% top-3 on 246 junctions vs. 68% on EPANET Net3.
+- The demo ward moved twice (first site matched a real outbreak; second was politically sensitive). Results on all three are in the README; top-3 went 67% → 57% → 39% as the ward grew from 84 to 246 junctions.
 - Detection is lower where people report less: 84% vs. 94%.
 - Ingress reaching only a few dozen residents is rarely detectable from complaints.
 - All of these results are simulated. None is field data.
@@ -93,7 +94,7 @@ All results below are at **≤1 false alarm per ward per quarter**. Brackets are
 
 ## 6. 2036
 
-Tap-water safety becomes as visible to a city as its air quality index. The path:
+Tap-water safety becomes as visible to a city as its air quality index, published at the city's discretion. The path:
 
 1. One ward in Indore.
 2. When Ujjain hosts Simhastha 2028, the temporary networks are covered.

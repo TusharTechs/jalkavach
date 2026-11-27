@@ -35,7 +35,13 @@ export default function MapView() {
   const [, bump] = useState(0);
   const panels = useRef<DOMRect[]>([]);
   useEffect(() => {
-    const read = () => { panels.current = [...document.querySelectorAll(".glass")].filter((e) => !e.closest("[data-map-overlay]")).map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.width < window.innerWidth * 0.9); };
+    // the map only re-renders while animating, so re-render when panels move (static night hours too)
+    let sig = "";
+    const read = () => {
+      panels.current = [...document.querySelectorAll(".glass")].filter((e) => !e.closest("[data-map-overlay]")).map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0 && r.width < window.innerWidth * 0.9);
+      const n = panels.current.map((r) => `${r.left | 0},${r.top | 0},${r.right | 0},${r.bottom | 0}`).join(";");
+      if (n !== sig) { sig = n; bump((x) => x + 1); }
+    };
     read();
     const id = window.setInterval(read, 300);
     return () => window.clearInterval(id);
@@ -277,8 +283,8 @@ export default function MapView() {
     if (layer.id === "complaints") return { html: `<b>${object.count} complaint(s)</b> in the last 3 days<br/>${lab(object.node)}`, style };
     if (layer.id === "tests" || layer.id === "tests-failed") return { html: `<b>Field test, day ${object.day}</b><br/>${object.failed ? "✕ FAILED: below 0.2 mg/L" : "passed"}<br/>${lab(object.node)}`, style };
     if (layer.id === "suggest") return { html: `<b>Suggested next test</b><br/>${L(object)}`, style };
-    if (layer.id === "cols") return { html: `<b>${L(object)}</b><br/>${(100 * object.p).toFixed(0)}% of the event probability · unconfirmed`, style };
-    if (layer.id === "pois") return { html: `<b>${lang === "hi" ? object.name_hi : object.name}</b><br/>illustrative partner store · simulated counts`, style };
+    if (layer.id === "cols") return { html: `<b>${L(object)}</b><br/>${lang === "hi" ? `घटना की संभावना का ${(100 * object.p).toFixed(0)}% · अपुष्ट` : `${(100 * object.p).toFixed(0)}% of the event probability · unconfirmed`}`, style };
+    if (layer.id === "pois") return { html: `<b>${lang === "hi" ? object.name_hi : object.name}</b><br/>${lang === "hi" ? "उदाहरण हेतु साझेदार स्टोर · सिमुलेटेड आँकड़े" : "illustrative partner store · simulated counts"}`, style };
     if (layer.id === "lowpressure") return { html: `<b>${L(object)}</b><br/>low-pressure exposure (supply off): ${object.deficit.toFixed(1)} pressure-deficit hours/day`, style };
     return null;
   };
@@ -309,7 +315,7 @@ export default function MapView() {
             <div className="glass !bg-[#061422]/85 rounded-xl pr-3 py-1.5 flex items-stretch gap-2.5 shadow-[0_8px_30px_-6px_rgba(255,107,107,.45)] whitespace-nowrap">
               <span className="w-1 rounded-full bg-coral ml-1.5" />
               <div className="leading-tight">
-                <div className="text-[13px] font-display font-semibold text-white">#1 of {state.credible90.length} · {(100 * top1.p).toFixed(0)}%</div>
+                <div className="text-[13px] font-display font-semibold text-white">{lang === "hi" ? `${state.credible90.length} में #1` : `#1 of ${state.credible90.length}`} · {(100 * top1.p).toFixed(0)}%</div>
                 <div className="text-[11px] text-coral/90 font-medium">{t_("unconfirmed")} · {L(top1).split(" · ")[0]}</div>
               </div>
             </div>

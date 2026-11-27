@@ -37,7 +37,7 @@ export default function Intro() {
   const { meta, setView } = useStore();
   const h = meta?.headline;
   const box = useRef<HTMLDivElement>(null);
-  const k = useFitScale(box, 40);
+  const k = useFitScale(box, 76);
   return (
     <motion.div className="absolute inset-0 z-50 flex items-center justify-center overflow-hidden noise"
       style={{ background: "radial-gradient(1200px 700px at 50% 40%, rgba(8,32,54,.96), rgba(2,8,14,.99))" }}
@@ -61,8 +61,8 @@ export default function Intro() {
         {h && (
           <motion.div className="mt-8 grid grid-cols-3 gap-3 w-full max-w-3xl" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.5 }}>
             {[
-              { v: <Counter to={100 * h.det_gain_vs_CC[0]} prefix="+" suffix=" pts" delay={2.6} />, l: "more events caught than a simple complaint-count alarm, at the same false-alarm budget" },
-              { v: <Counter to={100 * h.top3_F} suffix="%" delay={2.7} />, l: `true junction in the top 3 of ${h.n_junctions}, three days after the alert, when ingress follows pipe risk (complaints only: ${pct(h.top3_C)}; centroid: ${pct(h.top3_CC)})` },
+              { v: <Counter to={100 * h.det_gain_vs_CC[0]} prefix="+" suffix=" pts" delay={2.6} />, l: "more events caught than a simple complaint-count alarm (≤1 false alarm per ward per quarter; at a monthly budget the gain is not significant)" },
+              { v: <Counter to={100 * h.top3_F} suffix="%" delay={2.7} />, l: `true junction in the top 3 of ${h.n_junctions}, three days after the alert (complaints only: ${pct(h.top3_C)}; centroid: ${pct(h.top3_CC)})` },
               { v: <><Counter to={h.lead_days[0]} delay={2.8} /> days</>, l: "median lead over a hospital-only baseline (its misses counted at day 21)" },
             ].map((x, i) => (
               <div key={i} className="glass rounded-2xl px-4 py-4 text-left">

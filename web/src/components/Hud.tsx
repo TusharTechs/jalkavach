@@ -43,8 +43,8 @@ export function Gauge({ value, status, frac, km }: { value: number; status: keyo
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {alerting ? <>
-          <div className="text-[21px] font-display font-bold leading-none text-white"><Num v={km!} d={1} /></div>
-          <div className="text-[10px] text-aqua mt-0.5">km {t("to search")}</div>
+          <div className="text-[21px] font-display font-bold leading-none text-white"><Num v={km!} d={1} /><span className="text-[10px] font-sans font-medium text-aqua ml-0.5">{t("km")}</span></div>
+          <div className="text-[9.5px] text-aqua/90 mt-0.5 whitespace-nowrap">{t("to search")}</div>
         </> : <div className="text-[26px] font-display font-bold leading-none" style={{ color: col }}><Num v={value} /></div>}
       </div>
     </div>
@@ -85,6 +85,7 @@ export function TopBar() {
   const st = STATUS[state.status];
   const esc = state.escalation;
   const alerting = state.status === "ALERT";
+  const chip = alerting && esc?.status === "confirmed" ? "CONFIRMED" : state.status;
   return (
     <motion.div initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
       className="absolute top-4 left-4 right-4 z-30 flex items-stretch gap-3 pointer-events-none">
@@ -95,15 +96,15 @@ export function TopBar() {
         <Gauge value={state.alert_index} status={state.status} frac={alerting ? state.search_km / state.total_km : undefined} km={state.search_km} />
         <div>
           <div className="label">{t("Ward status")} · {t("Ward 00")}</div>
-          <motion.div key={state.status} initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 300 }}
+          <motion.div key={chip} initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 300 }}
             role="status" aria-live="assertive"
             className="mt-1 inline-flex items-center gap-2 rounded-full px-3.5 py-1 font-display font-bold text-xl"
             style={{ color: st.c, background: st.bg, boxShadow: alerting ? `0 0 26px -4px ${st.c}` : undefined }}>
             <span className="relative flex w-2.5 h-2.5"><span className="absolute inset-0 rounded-full ping-soft" style={{ background: st.c }} /><span className="relative w-2.5 h-2.5 rounded-full" style={{ background: st.c }} /></span>
-            <span className={lang === "hi" ? "font-hindi" : ""}>{t(state.status)}</span>
+            <span className={lang === "hi" ? "font-hindi" : ""}>{t(chip)}</span>
           </motion.div>
           <div className="text-[12.5px] text-mist mt-1 whitespace-nowrap">
-            {t("Alert index")} <b className={clsx("num", alerting ? "text-coral" : "text-slate-100")}>{state.alert_index.toFixed(0)}</b> · {t("city threshold 50")}
+            {t("Alert index")} <b className="num text-slate-100">{state.alert_index.toFixed(0)}</b> · {t("city threshold 50")}
           </div>
         </div>
       </div>
@@ -116,7 +117,9 @@ export function TopBar() {
               {t(state.supply_on ? "supply ON" : "supply OFF")}</span></div>
           {esc && esc.owner ? (
             <div className={clsx("text-[12.5px] font-medium", esc.overdue_h > 0 ? "text-coral" : "text-mint")}>
-              {t(esc.stage)}: {esc.overdue_h > 0 ? `${t("SLA missed by")} ${esc.overdue_h.toFixed(0)} h` : `${t("due in")} ${esc.remaining_h.toFixed(0)} h`}
+              {t(esc.stage)}: {lang === "hi"
+                ? (esc.overdue_h > 0 ? `समय-सीमा ${esc.overdue_h.toFixed(0)} घंटे पहले पार` : `${esc.remaining_h.toFixed(0)} घंटे बाकी`)
+                : (esc.overdue_h > 0 ? `${t("SLA missed by")} ${esc.overdue_h.toFixed(0)} h` : `${t("due in")} ${esc.remaining_h.toFixed(0)} h`)}
             </div>
           ) : esc ? <div className="text-[12.5px] text-mint">{t(`Alert ${esc.status}`)}</div> : <div className="text-[12.5px] text-mist">{t("No open alert")}</div>}
         </div>
@@ -138,7 +141,7 @@ export function TopBar() {
 }
 
 export function SignalsPanel() {
-  const { state, meta, stage } = useStore();
+  const { state, meta, stage, lang } = useStore();
   const t = useT();
   if (!state || !meta || stage) return null;
   const s = state.series;
@@ -171,14 +174,20 @@ export function SignalsPanel() {
         <Spark data={s.alert_index} color="#ff6b6b" max={100} mark={50} />
       </div>
       <div className="rounded-xl border border-amber/25 bg-amber/5 px-2.5 py-2 text-[11.5px] text-amber/90 leading-snug">
-        Equity check: where people report less, detection falls to {pct(meta.headline.equity_detected.low)} (vs {[...new Set([meta.headline.equity_detected.mid, meta.headline.equity_detected.high].sort().map(pct))].join("–")} elsewhere, simulation). Missed-call / IVR intake is next.
+        {(() => {
+          const lo = pct(meta.headline.equity_detected.low);
+          const hi = [...new Set([meta.headline.equity_detected.mid, meta.headline.equity_detected.high].sort().map(pct))].join("–");
+          return lang === "hi"
+            ? <span className="font-hindi">समानता जाँच: जहाँ लोग कम शिकायत करते हैं, वहाँ पहचान {lo} रह जाती है (जहाँ ज़्यादा करते हैं: {hi}; सिमुलेशन)। अगला कदम: मिस्ड-कॉल / IVR शिकायत।</span>
+            : <>Equity check: where people report less, detection falls to {lo} (vs {hi} where they report more; simulation). Missed-call / IVR intake is next.</>;
+        })()}
       </div>
     </motion.div>
   );
 }
 
 export function BeliefPanel() {
-  const { state, net, meta, setFocus, reveal, toggleReveal, stage } = useStore();
+  const { state, net, meta, setFocus, reveal, toggleReveal, stage, lang } = useStore();
   const t = useT();
   const L = useL();
   const pmax = useMemo(() => (state ? Math.max(...state.top.map((x) => x.p), 1e-9) : 1), [state]);
@@ -202,7 +211,7 @@ export function BeliefPanel() {
               <span className="text-mist">→</span>
               <span className="text-[34px] font-bold text-white leading-none"><Num v={state.search_km} d={1} /></span><span className="text-lg text-white">{t("km of pipe")}</span>
             </div>
-            <div className="text-[12px] text-mist mt-1">{t("pipes touching the 90% credible set")} ({N} {t("of")} {net.nodes.length} {t("junctions")})</div>
+            <div className="text-[12px] text-mist mt-1">{lang === "hi" ? `90% विश्वसनीय समूह को छूते पाइप (${net.nodes.length} में से ${N} जंक्शन)` : `pipes touching the 90% credible set (${N} of ${net.nodes.length} junctions)`}</div>
             <div className="text-[12.5px] text-slate-200 mt-2 flex items-center gap-1.5"><Users size={13} className="text-amber" aria-hidden />≈ <b className="num">{state.exposed_people.toLocaleString("en-IN")}</b> {t("people could be supplied through these pipes")}</div>
           </div>
           <div className="flex items-center gap-2"><Sparkles size={15} className="text-coral" aria-hidden /><span className="label">{t("Probable ingress · unconfirmed")}</span></div>
@@ -314,7 +323,7 @@ export function Timeline() {
           {alertDay !== null && ghost !== null && ghost > alertDay && (
             <div className="absolute top-[2px] h-[14px] pointer-events-none flex items-center" style={{ left: x(alertDay), width: `${(100 * (ghost - alertDay)) / meta.days}%` }}>
               <div className="w-full h-px bg-gradient-to-r from-coral to-white/50" />
-              <div className="absolute left-1/2 -translate-x-1/2 -top-[3px] px-2 rounded-full bg-abyss/90 text-[11.5px] text-aqua font-semibold whitespace-nowrap">{lead} {t("days earlier")}</div>
+              <div className="absolute left-1/2 -translate-x-1/2 -top-[3px] px-2 rounded-full bg-abyss/90 text-[11.5px] text-aqua font-semibold whitespace-nowrap">{t("median lead")} +{lead} {t("d")}</div>
             </div>
           )}
           {alertDay !== null && (
@@ -324,7 +333,7 @@ export function Timeline() {
           )}
           {ghost !== null && (
             <div className="absolute top-3 bottom-0 pointer-events-none" style={{ left: x(ghost) }}>
-              <div className="w-px h-full border-l border-dashed border-white/40" /><div className="absolute top-0 left-[6px] text-[11.5px] text-slate-300 whitespace-nowrap">{t("Hospital-only baseline would alert ≈ day")} {ghost}</div>
+              <div className="w-px h-full border-l border-dashed border-white/40" /><div className="absolute top-0 left-[6px] text-[11.5px] text-slate-300 whitespace-nowrap">{t("Hospital-only baseline: median in simulation, not this run")}</div>
             </div>
           )}
           <motion.div className="absolute top-3 bottom-0 pointer-events-none" initial={false} animate={{ left: x(day) }} transition={{ type: "spring", stiffness: 200, damping: 25 }}>

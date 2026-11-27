@@ -131,3 +131,12 @@ def test_exposure_is_reported_on_alert(svc):
     st = svc.day_state(d, EVAL_HOUR)
     assert 0 < st["exposed_people"] <= float(svc.ctx.pop.sum()) + 10
     assert svc.export_pack(d, EVAL_HOUR)["exposed_people"] == st["exposed_people"]
+
+
+def test_advisory_groups_areas_by_landmark():
+    from jalkavach.escalation import _group_areas
+    en = _group_areas(["Lane 59 · at Park 2", "Lane 143 · 40 m SE of Park 4", "Lane 142 · 80 m E of Park 4"], hi=False)
+    assert en == "Lane 59 near Park 2; Lanes 143, 142 near Park 4"
+    hi = _group_areas(["गली 59 · पार्क 2 के पास", "गली 143 · पार्क 4 से 40 मी दक्षिण-पूर्व"], hi=True)
+    assert hi == "पार्क 2 के पास गली 59; पार्क 4 के पास गली 143"
+    assert "के पास के पास" not in hi and "near at" not in en

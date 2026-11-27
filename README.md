@@ -49,6 +49,14 @@ The evaluation design was pre-registered before the first run: [`harness/PREREGI
 | Coverage of the 90% credible set | 93% [89–96] |
 | Robustness topology (EPANET Net3): lead over the hospital baseline; top-3 | 5.0 [4.0–6.0] days; 68% |
 
+**The demo ward moved twice, for reasons unrelated to results** (see the change log in the pre-registration). Every ward is reported, not just the current one. Detection is stable; localisation gets harder as the ward grows:
+
+| Demo ward (as reported at the time; see the change log for what changed between runs) | Junctions | Lead vs. hospital | Detected | vs. count alarm | Top-3 (centroid) |
+|---|---|---|---|---|---|
+| 1st: site of a real 2025–26 outbreak, withdrawn | 84 | 7.0 [6–8] d | 94% | +13 [8–18] | 67% (12%) |
+| 2nd: old-city ward, withdrawn as politically sensitive | 146 | 5.0 [4–6] d | 85% | +16 [11–21] | 57% (13%) |
+| **3rd: Nipania (current)** | 246 | **7.0 [6–8] d** | **90%** | **+22 [16–28]** | **39% (6%)** |
+
 **What did not work as well, reported as measured:**
 - **Detection timing.** It is driven by complaints. Fusion alarms no earlier than complaints alone or a simple complaint-count exceedance detector. Fusion's gains come in **how many** events are caught and **where** the problem is located, not in how early the alarm fires.
 - **Intermittent-supply prior vs. a 24×7-style prior.** +3.2 points of top-3 accuracy, with a CI of −0.9 to +7.4. **Not significant.** The informed prior beats a uniform one by only +3.7 [−1.4 to +8.3] points.

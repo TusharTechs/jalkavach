@@ -263,6 +263,7 @@ class Service:
                            "escalate_every_hours": eng.policy["escalate_every_hours"]},
                 "headline": {"lead_days": q["lead_F_vs_H"], "detected_F": q["F"]["detected"][0],
                              "detected_H": q["H"]["detected"][0], "detected_CC": q["CC"]["detected"][0],
+                             "detected_C": q["C"]["detected"][0],
                              "det_gain_vs_CC": q["detect_rate_diff_F_vs_CC"],
                              "routing": {k: {"median": self.summary["routing"][k]["median_tests_to_top3"][0],
                                              "mean": round(self.summary["routing"][k]["mean_tests_to_top3"][0], 1)}

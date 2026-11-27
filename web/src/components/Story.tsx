@@ -63,7 +63,7 @@ export function useStory() {
           const x = st().state!;
           return `The alert opens the search: from ${x.total_km.toFixed(1)} km of pipe to ${x.search_km.toFixed(1)} km, ranked, every row marked unconfirmed. Not yet a location: a place to start testing.`;
         } },
-      { at: T + 14500, caption: "7 pm: a resident's Hindi voice note: “near the park”, but this ward has six parks, so the officer asks which one before it is pinned.",
+      { at: T + 14500, caption: "7 pm: a resident's Hindi voice note: “near the park”, but this ward has six parks, so nothing is pinned until the officer calls back and the resident says Park 4.",
         run: async () => {
           const p = (await api.parse(STORY_COMPLAINT)).parsed;
           const o = p.options.find((x) => x.name === STORY_PLACE) ?? p.options[0];
@@ -71,7 +71,7 @@ export function useStory() {
         } },
       { at: T + 21500, caption: "The city's clock starts. 8 pm: the ward's Assistant Engineer acknowledges, well within the SLA. The clock turns green.",
         run: async () => { go("escalation"); await new Promise((r) => setTimeout(r, 1800)); await api.action("acknowledge", owner(0), A, 20); await at(A, 20); } },
-      { at: T + 28500, caption: "Next morning the Amrut Mitra team tests the suggested taps. By the 6 pm run, failed chlorine tests close the search.",
+      { at: T + 28500, caption: "Next morning the field team logs its tests, and the day's routine chlorine checks include two failures near the complaints. The 6 pm run narrows the search.",
         run: async () => { await api.action("samples", owner(1), A + 1, 11); go("command"); await at(A + 1, 11); } },
       { at: T + 34000, caption: () => {
           const x = st().state!;

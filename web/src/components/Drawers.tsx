@@ -27,7 +27,7 @@ export function Shell({ title, icon, children, wide = false }: { title: string; 
         <div className="flex-1" />
         <button aria-label="Close (Esc)" onClick={() => setView("command")} className="w-9 h-9 rounded-xl grid place-items-center hover:bg-white/5 text-mist"><X size={18} /></button>
       </div>
-      <div className="flex-1 overflow-auto scrollbar-thin px-6 py-5">{children}</div>
+      <div className="flex-1 overflow-auto scrollbar-thin px-6 pt-5 pb-9 [mask-image:linear-gradient(to_bottom,black_calc(100%-32px),transparent)]">{children}</div>
     </motion.div>
   );
 }
@@ -321,7 +321,7 @@ function Radial({ frac, color, size = 64, children }: { frac: number; color: str
 }
 
 const ROLE_HELP: Record<string, string> = {
-  "Assistant Engineer, Water Works (ward)": "AE · ward-level water engineer",
+  "Assistant Engineer, Water Works (ward)": "AE or Sub-Engineer (city sets) · ward-level water engineer",
   "Assistant Engineer + Amrut Mitra field team": "AE + Amrut Mitras · trained field testers",
   "Executive Engineer, Water Works (zone)": "EE · zone-level engineer",
 };
@@ -373,7 +373,7 @@ export function Escalation() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="font-display text-2xl font-bold">Alert {esc.id}</div>
             <span className={clsx("px-3 py-1 rounded-full text-[12px] font-semibold", esc.status === "open" ? "bg-coral/15 text-coral" : esc.status === "confirmed" ? "bg-amber/15 text-amber" : "bg-mint/15 text-mint")}>{esc.status}</span>
-            <div className="text-[12.5px] text-mist">opened Day {Math.round((new Date(esc.opened).getTime() - new Date(meta.base_date).getTime()) / 864e5 - 0.5)}, 18:00 · District Surveillance Officer informed (per city config; no live IDSP link) · ≈ {state!.exposed_people.toLocaleString("en-IN")} residents on the candidate pipes</div>
+            <div className="text-[12.5px] text-mist">opened Day {Math.round((new Date(esc.opened).getTime() - new Date(meta.base_date).getTime()) / 864e5 - 0.5)}, 18:00 · District Surveillance Officer informed (per city config; no live IDSP link) · ≈ {state!.exposed_people.toLocaleString("en-IN")} residents on the candidate pipes now (updates hourly)</div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {stages.map((s, k) => {
@@ -388,7 +388,7 @@ export function Escalation() {
                     {done ? <Check size={20} className="text-mint" /> : <span className="font-display text-[13px] num" style={{ color: col }}>{cur ? (over ? `+${esc.overdue_h.toFixed(0)}h` : `${esc.remaining_h.toFixed(0)}h`) : `${s.sla_hours}h`}</span>}
                   </Radial>
                   <div className="mt-3 font-semibold text-[14px]">{t(s.label)}</div>
-                  <div className="text-[12px] text-mist">{ROLE_HELP[s.owner] ?? s.owner}</div>
+                  <div className="text-[12px] text-mist">{t(s.owner) !== s.owner ? t(s.owner) : ROLE_HELP[s.owner] ?? s.owner}</div>
                   <div className="text-[11.5px] text-mist mt-1">SLA {s.sla_hours} h {done ? "· done" : over ? "· missed" : ""}</div>
                 </motion.div>
               );
@@ -420,7 +420,7 @@ export function Escalation() {
                 return (
                   <div key={c} className="relative flex items-center gap-2 text-[12.5px]">
                     <span className={clsx("absolute -left-[19px] w-2.5 h-2.5 rounded-full border-2", lit ? "bg-coral border-coral" : "bg-abyss border-white/25")} />
-                    <span className={lit ? "text-coral" : "text-slate-300"}>{c}</span>
+                    <span className={lit ? "text-coral" : "text-slate-300"}>{t(c)}</span>
                     <span className="text-mist text-[11.5px]">{lit ? "· notified" : i === 0 ? "· notified when the SLA is missed" : `· if still missed ${i * meta.policy.escalate_every_hours} h later`}</span>
                   </div>
                 );
@@ -476,7 +476,12 @@ function describe(r: AuditRow): string {
     case "field_test_added": return `Field test: ${p.mg_l ?? "?"} mg/L ${p.below_0_2 ? "(below 0.2)" : "(ok)"}`;
     case "drafts_created": return "Draft work order and advisory created";
     default:
-      if (r.action.startsWith("stage_done:")) return `${r.action.replace("stage_done:", "").replace("_", " ")} completed${p.on_time ? " · within SLA" : " · after SLA"}${p.reason_for_delay ? ` · reason: "${p.reason_for_delay}"` : ""}`;
+      if (r.action.startsWith("stage_done:")) {
+        const id = r.action.replace("stage_done:", "");
+        const what = id === "acknowledge" ? "Alert acknowledged" : id === "sample" ? "Field tests taken"
+          : String(p.note ?? "").startsWith("cleared") ? "Alert cleared (false alarm)" : id === "decide" ? "Ingress confirmed · work order drafted" : `${id} done`;
+        return `${what}${p.on_time ? " · within SLA" : " · after SLA"}${p.reason_for_delay ? ` · reason: "${p.reason_for_delay}"` : ""}`;
+      }
       if (r.action.startsWith("approved:")) return `Approved: ${r.action.replace("approved:", "").replace("_", " ")}`;
       return r.action;
   }
@@ -484,6 +489,7 @@ function describe(r: AuditRow): string {
 
 export function Audit() {
   const { state, day, hour } = useStore();
+  const t = useT();
   const [data, setData] = useState<{ ok: boolean; bad: number | null; rows: AuditRow[] } | null>(null);
   const [broken, setBroken] = useState<number | null>(null);
   const [hashes, setHashes] = useState(false);
@@ -516,7 +522,7 @@ export function Audit() {
                   <div className="w-32 shrink-0 text-[12px] text-mist num">#{r.seq} · {fmt(r.ts)}</div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[13.5px] text-slate-100">{describe(r)}</div>
-                    <div className={clsx("text-[12px]", human ? "text-mint/90" : "text-mist")}>{r.actor}</div>
+                    <div className={clsx("text-[12px]", human ? "text-mint/90" : "text-mist")}>{t(r.actor)}</div>
                   </div>
                   {hashes && <div className={clsx("font-mono text-[10.5px] text-right", isBroken ? "text-coral" : "text-aqua/80")}>{r.hash.slice(0, 16)}…<br /><span className="text-mist/60">prev {r.prev_hash.slice(0, 10)}…</span></div>}
                 </div>
@@ -547,8 +553,8 @@ export function Evidence() {
     <Shell title="Evidence · held-out simulation, pre-registered" icon={<Sparkles size={18} />} wide>
       <div className="grid grid-cols-4 gap-3">
         {[
-          [`+${Math.round(100 * h.det_gain_vs_CC[0])} pts`, `more events caught within 21 days than a simple complaint-count alarm (95% CI +${Math.round(100 * h.det_gain_vs_CC[1])} to +${Math.round(100 * h.det_gain_vs_CC[2])})`],
-          [pct(h.top3_F), `true junction in the top 3, three days after the alert, when ingress follows pipe risk (complaints only: ${pct(h.top3_C)}; centroid: ${pct(h.top3_CC)}; ${h.top3_F_uniform !== null ? pct(h.top3_F_uniform) : "–"} when it doesn't)`],
+          [`+${Math.round(100 * h.det_gain_vs_CC[0])} pts`, `more events caught within 21 days than a simple complaint-count alarm, ≤1 false alarm per quarter (95% CI +${Math.round(100 * h.det_gain_vs_CC[1])} to +${Math.round(100 * h.det_gain_vs_CC[2])})`],
+          [pct(h.top3_F), `true junction in the top 3, three days after the alert (complaints only: ${pct(h.top3_C)}; centroid: ${pct(h.top3_CC)}; ${h.top3_F_uniform !== null ? pct(h.top3_F_uniform) : "–"} with uniformly placed ingress)`],
           [`${h.lead_days[0]} days`, `median lead over a hospital-only baseline (95% CI ${h.lead_days[1]}–${h.lead_days[2]}; its misses counted at day 21)`],
           [pct(h.coverage), `of 90% credible sets contained the true junction: conservative (${h.coverage_uniform !== null ? pct(h.coverage_uniform) : "–"} when ingress ignores pipe risk)`],
         ].map(([v, l], i) => (
@@ -593,7 +599,7 @@ export function Evidence() {
           <div className="rounded-2xl border border-amber/30 bg-amber/5 p-4">
             <div className="label mb-2 text-amber">What did not work as well (as measured)</div>
             <ul className="text-[12.5px] text-amber/90 space-y-1.5 list-disc ml-4">
-              <li>Fusion does not alarm <i>earlier</i> than complaints alone; it catches <i>more</i> events and narrows <i>where</i>.</li>
+              <li>Fusion does not alarm <i>earlier</i> or catch <i>more</i> events than the complaints-only model ({pct(h.detected_F)} vs {pct(h.detected_C)}). The +{Math.round(100 * h.det_gain_vs_CC[0])} pts is the engine vs. a simple count alarm; fusion's own gain is <i>where</i>: {pct(h.top3_F)} vs {pct(h.top3_C)} top-3.</li>
               <li>Intermittent-supply prior vs. a 24×7 prior: not significant.</li>
               <li>Larger wards localise less well: {pct(h.top3_F)} top-3 here ({h.n_junctions} junctions), {res ? <> vs. {pct(res.net3.top3)} on the smaller Net3</> : null}.</li>
               <li>Information-gain test routing ≈ random (median {h.routing.info_gain.median} vs {h.routing.random.median} tests).</li>
@@ -649,19 +655,19 @@ export function Vision() {
     <Shell title="2036 · from one ward to every tap" icon={<Sparkles size={18} />} wide>
       <div className="grid grid-cols-5 gap-5">
         <div className="col-span-3 space-y-4">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-cyan/30 bg-cyan/5 p-5">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-cyan/30 bg-cyan/5 px-5 py-4">
             <div className="label text-aqua">Message for the 2036 Capsule</div>
-            <div className="font-display text-[19px] mt-2 text-slate-100 leading-snug">“Dear 2036: we built this so a city hears it from its own signals, not from a hospital bed. If your city knows before its hospitals do, it worked.”</div>
-            <div className="font-hindi text-[16px] text-[#FFB27A] mt-3" style={{ letterSpacing: 0 }}>लोकमाता देवी अहिल्याबाई ने घाट और कुएँ बनवाए; हम हर नल का पानी सुरक्षित रखेंगे।</div>
+            <div className="font-display text-[18px] mt-1.5 text-slate-100 leading-snug">“Dear 2036: we built this so a city hears it from its own signals, not from a hospital bed. If your city knows before its hospitals do, it worked.”</div>
+            <div className="font-hindi text-[16px] text-[#FFB27A] mt-2" style={{ letterSpacing: 0 }}>लोकमाता देवी अहिल्याबाई ने घाट और कुएँ बनवाए; हम हर नल का पानी सुरक्षित रखेंगे।</div>
           </motion.div>
           <div className="relative">
-            <div className="absolute left-[23px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-aqua via-cyan to-azure opacity-50" />
+            <div className="absolute left-[21px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-aqua via-cyan to-azure opacity-50" />
             {steps.map((s, i) => (
-              <motion.div key={s.k} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 * i }} className="relative flex gap-4 mb-2.5">
-                <motion.div className="w-12 h-12 rounded-2xl grid place-items-center font-display font-bold text-abyss shrink-0 z-10"
+              <motion.div key={s.k} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 * i }} className="relative flex gap-4 mb-2">
+                <motion.div className="w-11 h-11 rounded-2xl grid place-items-center font-display font-bold text-abyss shrink-0 z-10"
                   style={{ background: `linear-gradient(135deg, #67e8f9, ${["#22a6f2", "#2b8cf0", "#3a6ff0", "#2f5be8", "#2546e8"][i]})` }}
                   initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.12 * i + 0.1, type: "spring" }}>{i + 1}</motion.div>
-                <div className="flex-1 rounded-2xl bg-black/20 border border-white/5 px-4 py-2.5">
+                <div className="flex-1 rounded-2xl bg-black/20 border border-white/5 px-4 py-2">
                   <div className="flex items-baseline gap-3"><div className="font-display text-[17px] font-semibold">{s.t}</div><div className="text-aqua text-[13px]">{s.k}</div><div className="flex-1" /><div className="text-[12px] text-mist">{s.n}</div></div>
                   <div className="text-[13px] text-slate-300 mt-0.5">{s.d}</div>
                 </div>
@@ -677,7 +683,7 @@ export function Vision() {
           </div>
           <div className="rounded-2xl bg-black/20 border border-white/5 p-4 text-[12.5px] text-slate-300 space-y-1.5">
             <div className="label mb-1">Pilot readiness</div>
-            <div>Needs from the city: the ward's pipe map, a complaint-log export, and an SLA config. That is all.</div>
+            <div>Needs from the city: the ward's pipe map, a complaint-log export, and an SLA config. Pharmacy data is optional.</div>
             <div>Engine: open source (Apache-2.0), built toward the Digital Public Goods standard. No patents.</div>
             <div className="text-aqua">Our ask: that the city names the first pilot ward.</div>
           </div>
