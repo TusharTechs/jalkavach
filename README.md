@@ -10,7 +10,7 @@ Built for Indore · BUILD 2036 (TiE Global Summit 2026) · Frontier 06: The Rise
 
 <p align="center">
   <a href="https://youtu.be/-0dS_VIg2MM"><img alt="Watch the demo" src="https://img.shields.io/badge/▶_Demo_video-95_s-e54848?style=for-the-badge&labelColor=0b2a4a"></a>
-  <!--LIVE_BADGE-->
+  <a href="https://jalkavach-422790828744.asia-south1.run.app"><img alt="Live demo" src="https://img.shields.io/badge/🌐_Live_demo-open-168fd8?style=for-the-badge&labelColor=0b2a4a"></a>
   <a href="results/RESULTS.md"><img alt="Evaluation" src="https://img.shields.io/badge/Evaluation-pre--registered-168fd8?style=for-the-badge&labelColor=0b2a4a"></a>
   <a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/License-Apache--2.0-1e9e6e?style=for-the-badge&labelColor=0b2a4a"></a>
 </p>
@@ -24,7 +24,7 @@ Built for Indore · BUILD 2036 (TiE Global Summit 2026) · Frontier 06: The Rise
 | What | Where |
 |---|---|
 | ▶ **Demo video** (95 s, narrated) | https://youtu.be/-0dS_VIg2MM |
-| 🌐 **Live demo** | Runs on any laptop in one command: [Run it locally](#run-it-locally) (hosted link coming) |
+| 🌐 **Live demo** | https://jalkavach-422790828744.asia-south1.run.app (scales to zero: the first visit after a quiet spell takes about 30 s to wake up) |
 | 📑 **Submission deck** (PDF) | [docs/JalKavach_BUILD2036_Submission.pdf](docs/JalKavach_BUILD2036_Submission.pdf) |
 | 📊 **Evaluation results**, every number with its interval | [results/RESULTS.md](results/RESULTS.md) |
 | 🧾 **Pre-registration** and change log, written before the first run | [harness/PREREGISTRATION.md](harness/PREREGISTRATION.md) |
@@ -142,7 +142,7 @@ make test    # offline tests
 make eval    # re-run the pre-registered evaluation, then: make report
 ```
 
-**Option B: Docker** (any OS)
+**Option B: Docker** (any OS; the same image runs the [live demo](https://jalkavach-422790828744.asia-south1.run.app) on Google Cloud Run)
 
 ```bash
 docker build -t jalkavach .
